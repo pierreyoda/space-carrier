@@ -1,0 +1,4 @@
+#ifndef PYTHONBINDING_HPP
+#define PYTHONBINDING_HPP
+
+#endif /* PYTHONBINDING_HPP */
