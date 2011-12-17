@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="Space Carrier" />
+		<Option pch_mode="2" />
+		<Option compiler="gcc" />
+		<Build>
+			<Target title="Debug">
+				<Option output="SpaceCarrier_d" prefix_auto="1" extension_auto="1" />
+				<Option object_output="src\obj\Debug\" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-g" />
+				</Compiler>
+				<Linker>
+					<Add option="-lthor-d" />
+					<Add option="-lsfml-graphics-d" />
+					<Add option="-lsfml-window-d" />
+					<Add option="-lsfml-system-d" />
+					<Add option="-lboost_python3-mgw45-mt-d-1_47" />
+					<Add option="-lboost_filesystem-mgw45-mt-d-1_47" />
+					<Add option="-lboost_system-mgw45-mt-d-1_47" />
+				</Linker>
+			</Target>
+			<Target title="Release">
+				<Option output="SpaceCarrier" prefix_auto="1" extension_auto="1" />
+				<Option object_output="src\obj\Release\" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-O2" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+					<Add option="-lthor" />
+					<Add option="-lsfml-graphics" />
+					<Add option="-lsfml-window" />
+					<Add option="-lsfml-system" />
+					<Add option="-lboost_python3-mgw45-mt-1_47" />
+					<Add option="-lboost_filesystem-mgw45-mt-1_47" />
+					<Add option="-lboost_system-mgw45-mt-1_47" />
+				</Linker>
+			</Target>
+		</Build>
+		<Compiler>
+			<Add option="-Wall" />
+			<Add option="-fexceptions" />
+			<Add directory="$(#thor.include)" />
+			<Add directory="$(#sfml2.include)" />
+			<Add directory="$(#boost.include)" />
+			<Add directory="$(#python32.include)" />
+		</Compiler>
+		<Linker>
+			<Add option="-static-libgcc" />
+			<Add option="-lpython32" />
+			<Add directory="$(#thor.lib)" />
+			<Add directory="$(#sfml2.lib)" />
+			<Add directory="$(#boost.lib)" />
+			<Add directory="$(#python32.lib)" />
+		</Linker>
+		<Unit filename="src\OiwEngine.cpp" />
+		<Unit filename="src\OiwEngine.hpp" />
+		<Unit filename="src\SpaceCarrier.cpp" />
+		<Unit filename="src\SpaceCarrier.hpp" />
+		<Unit filename="src\engine_2d\CollisionTable.cpp" />
+		<Unit filename="src\engine_2d\CollisionTable.hpp" />
+		<Unit filename="src\engine_2d\Entity.cpp" />
+		<Unit filename="src\engine_2d\Entity.hpp" />
+		<Unit filename="src\engine_2d\EntityCollisions.cpp" />
+		<Unit filename="src\engine_2d\EntityCollisions.hpp" />
+		<Unit filename="src\engine_2d\EntityManager.cpp" />
+		<Unit filename="src\engine_2d\EntityManager.hpp" />
+		<Unit filename="src\engine_2d\State.cpp" />
+		<Unit filename="src\engine_2d\State.hpp" />
+		<Unit filename="src\main.cpp" />
+		<Unit filename="src\python\PythonBinding.hpp" />
+		<Unit filename="src\python\PythonEmbedder.cpp" />
+		<Unit filename="src\python\PythonEmbedder.hpp" />
+		<Unit filename="src\python\pythonSfml.cpp" />
+		<Unit filename="src\python\pythonThor.cpp" />
+		<Extensions>
+			<code_completion />
+			<envvars />
+			<debugger />
+			<lib_finder disable_auto="1" />
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>
