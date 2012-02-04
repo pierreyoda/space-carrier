@@ -78,7 +78,6 @@ class FpsCounter (Entity):
 		self.clock = thor.StopWatch(True)
 
 	def update(self, elapsed_time):
-		#fps = 0 if elapsed_time == 0 else Decimal(1000 / elapsed_time).quantize(Decimal("1."))
 		fps = FpsCounter.compute_fps(elapsed_time)
 		if self.clock.GetElapsedTime() < self.refresh_time:
 			return True
@@ -88,7 +87,11 @@ class FpsCounter (Entity):
 		return True
 
 	def render(self, target):
+		"""Rendered in the default view"""
+		current_view = target.GetView()
+		target.SetView(target.GetDefaultView())
 		target.Draw(self.fps)
+		target.SetView(current_view)
 
 	frame_counter, frame_time, fps = 0, 0, 0
 	@staticmethod

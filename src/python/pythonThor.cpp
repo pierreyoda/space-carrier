@@ -7,7 +7,16 @@ using namespace boost::python;
 #include <thor/Multimedia.hpp>
 #include <thor/Events.hpp>
 #include <thor/Resources.hpp>
+#include <thor/Geometry.hpp>
+#include <thor/Particles.hpp>
+#include <thor/Vectors.hpp>
 #include <SFML/Graphics.hpp>
+#include <tr1/memory>
+
+// A macro to simplify overloaded member function (=method) binding
+#define method(CLASS, METHOD, RTYPE, ARGS...) \
+    def(BOOST_PP_STRINGIZE(METHOD), \
+        (RTYPE(CLASS::*)(ARGS))&CLASS::METHOD)
 
 // "thin wrappers" : auto overloading macro would be too heavy here
 void thor_stopwatch_reset(thor::StopWatch &watch) { watch.Reset(); }
@@ -94,6 +103,8 @@ struct ResourcePtr_wrapper
             .def("valid", &valid)
             .def("get", &get,  return_internal_reference<1, with_custodian_and_ward_postcall<0, 1> >())
         ;
+        def("NoDeletePtr", &thor::NoDeletePtr<const Resource>,
+            with_custodian_and_ward_postcall<1, 0>()); // keep ResourcePtr as long as original pointer is alive
     }
 
     static Resource *get(const ResourcePtrT &resourcePtr)
@@ -107,7 +118,63 @@ struct ResourcePtr_wrapper
     }
 };
 
+// needed by boost::python
+namespace std
+{
+    namespace tr1
+    {
+        template<class T>
+        T* get_pointer(std::tr1::shared_ptr<T> &p)
+        {
+            return p.get();
+        }
+        template<class T>
+        const T* get_pointer(const std::tr1::shared_ptr<T> &p)
+        {
+            return p.get();
+        }
+    }
+} // namespace std::tr1
+
+/*// Emitter::Ptr and Affector::Ptr are std::tr1::shared_ptr
+namespace boost
+{
+    namespace python
+    {
+        //Make Boost.Python work with std::tr1::shared_ptr<>
+        template<typename T_>
+        struct pointee<std::tr1::shared_ptr<T_> >
+        {
+            typedef T_ type;
+        };
+
+        //Make Boost.Python work with std::tr1::shared_ptr<const>
+        template<typename T_>
+        struct pointee<std::tr1::shared_ptr<const T_> >
+        {
+            typedef T_ type;
+        };
+    }
+}*/
+
+// "Thin wrappers"
+void Emitter_SetEmissionZone(thor::Emitter &emitter, thor::Zone &zone)
+{
+    emitter.SetEmissionZone(thor::Emitter::ZonePtr(&zone));
+}
+void TargetEmitter_SetTargetZone(thor::TargetEmitter &emitter, thor::Zone &zone)
+{
+    emitter.SetTargetZone(thor::Emitter::ZonePtr(&zone));
+}
+
+sf::Vector2f PolarVector2f_to_Vector2f(const thor::PolarVector2f &vector)
+{
+    return static_cast<sf::Vector2f>(vector);
+}
+
+// TODO (Pierre-Yves#1#): [EXPORT-THOR] Find a way to bind CreateGradient (from a list of colors and transitions...)
 // TODO (Pierre-Yves#2#): [EXPORT-THOR] thor::Action : operators && (and) and || (or) don't work
+// TODO (Pierre-Yves#5#): [EXPORT-THOR] make thor::Emitter and thor::Affector derivable (--> Wrapper)
 void PythonEmbedder::exportThor()
 {
     namespace bp = boost::python;
@@ -144,15 +211,11 @@ void PythonEmbedder::exportThor()
     def("RoundedRect", rounded2, rounded_overloads2());
     def("Polygon", &thor::Shapes::Polygon, polygon_overloads());
     } ; // end of sf::Shapes scope
-    /*class_<thor::ConcaveShape, bases<sf::Drawable> >("ConcaveShape",
-        "Concave shape class") // MUST BE IN THE SF MODULE
-    ;*/
-    def("ToString", (std::string(*)(const sf::Color&))&thor::ToString);
-    def("ToString", (std::string(*)(const sf::Vector2i&))&thor::ToString);
-    def("ToString", (std::string(*)(const sf::Vector2f&))&thor::ToString);
-    def("ToString", (std::string(*)(const sf::Vector2u&))&thor::ToString);
-    def("ToString", (std::string(*)(const sf::IntRect&))&thor::ToString);
-    def("ToString", (std::string(*)(const sf::FloatRect&))&thor::ToString);
+    class_<thor::ColorGradient>("ColorGradient",
+        "Class to implement color gradients", bp::init<const sf::Color&>())
+        .def("GetColor", &thor::ColorGradient::GetColor)
+    ; def("ToString", (std::string(*)(const sf::Color&))&thor::ToString);
+
     // Events
     class_<ActionStrMap, boost::noncopyable>("ActionStrMap",
         "Class that associates string identifiers with dynamic actions",
@@ -247,8 +310,169 @@ void PythonEmbedder::exportThor()
         .staticmethod("FromFile")
         .def("Swap", &FontKey::Swap)
         .def(self < other<const FontKey>())
-    ;} // end of thor::Resources scope
+    ; } // end of thor::Resources scope
     ResourcePtr_wrapper<sf::Texture>::wrap("TextureResourcePtr");
     ResourcePtr_wrapper<sf::Image>::wrap("ImageResourcePtr");
     ResourcePtr_wrapper<sf::Font>::wrap("FontResourcePtr");
+
+    // Geometry
+    class_<thor::Zone, boost::noncopyable>("Zone",
+        "Abstract base class for geometric zones", no_init)
+        .def("GetRandomPoint", &thor::Zone::GetRandomPoint)
+        .def("Clone", &thor::Zone::Clone,
+             return_value_policy<manage_new_object>())
+        .method(thor::Zone, SetPosition, void, sf::Vector2f)
+        .method(thor::Zone, SetPosition, void, float, float)
+        .method(thor::Zone, Move, void, sf::Vector2f)
+        .method(thor::Zone, Move, void, float, float)
+        .def("GetPosition", &thor::Zone::GetPosition)
+        .def("SetRotation", &thor::Zone::SetRotation)
+        .def("Rotate", &thor::Zone::Rotate)
+        .def("GetRotation", &thor::Zone::GetRotation)
+    ; class_<thor::Circle, bases<thor::Zone> >("Circle", "Geometric circle class",
+        bp::init<sf::Vector2f, float>())
+        .def("SetRadius", &thor::Circle::SetRadius)
+        .def("GetRadius", &thor::Circle::GetRadius)
+    ; class_<thor::Point, bases<thor::Zone> >("Point", "Geometric point class",
+        bp::init<sf::Vector2f>())
+        .def(bp::init<float, float>())
+    ; class_<thor::Rectangle, bases<thor::Zone> >("Rectangle",
+        "Geometric rectangle class",
+        bp::init< const sf::FloatRect&, optional<float> >())
+        .def(bp::init< sf::Vector2f, sf::Vector2f, optional<float> >())
+        .def(bp::init< float, float, float, float, optional<float> >())
+        .def("SetSize", &thor::Rectangle::SetSize)
+        .def("GetSize", &thor::Rectangle::GetSize)
+    ;
+    // Particles
+    {
+    using namespace thor;
+        // ParticleSystem scope
+        {
+        scope nested = class_<ParticleSystem, boost::noncopyable>("ParticleSystem",
+            "Class for simple particle systems",
+                bp::init<ResourcePtr<const sf::Texture>,
+                optional<const sf::IntRect&> >())
+            .def("Swap", &ParticleSystem::Swap)
+            .def("AddAffector", (void(ParticleSystem::*)(Affector::Ptr))
+                 &ParticleSystem::AddAffector, with_custodian_and_ward<1, 2>()) // keep affector as long as manager is alive
+            .def("RemoveAffector", &ParticleSystem::RemoveAffector)
+            .def("ClearAffectors", &ParticleSystem::ClearAffectors)
+            .def("ContainsAffector", &ParticleSystem::ContainsAffector)
+            .def("AddEmitter", (void(ParticleSystem::*)(Emitter::Ptr))
+                 &ParticleSystem::AddEmitter, with_custodian_and_ward<1, 2>()) // keep affector as long as manager is alive
+            .def("RemoveEmitter", &ParticleSystem::RemoveEmitter)
+            .def("ClearEmitters", &ParticleSystem::ClearEmitters)
+            .def("ContainsEmitter", &ParticleSystem::ContainsEmitter)
+            .def("Update", &ParticleSystem::Update)
+            .def("Draw", &ParticleSystem::Draw)
+            .def("ClearParticles", &ParticleSystem::ClearParticles)
+            .def("SetGlowing", &ParticleSystem::SetGlowing)
+            .def("IsGlowing", &ParticleSystem::IsGlowing)
+        ; class_<ParticleSystem::TimeLimit>("TimeLimit",
+            "Functor for emitter/affector removal triggered by time limit",
+            bp::init<float>())
+    ; } // end of ParticleSystem scope
+    ResourcePtr_wrapper<const sf::Texture>::wrap("TextureResourcePtrConst");
+    class_<Emitter, boost::noncopyable, std::tr1::shared_ptr<Emitter> >("Emitter",
+        "Abstract base class for particle emitters", no_init)
+        .def("SetEmissionZone", &Emitter_SetEmissionZone,
+             with_custodian_and_ward<1, 2>()) // keep zone as long as emitter is alive
+        .def("GetEmissionZone", (Zone&(Emitter::*)())&Emitter::GetEmissionZone,
+            return_internal_reference<1>())
+        .def("GetEmissionZone", (const Zone&(Emitter::*)()const)
+             &Emitter::GetEmissionZone, return_internal_reference<1>())
+        .def("SetEmissionRate", &Emitter::SetEmissionRate)
+        .def("GetEmissionRate", &Emitter::GetEmissionRate)
+        .def("SetParticleScale", &Emitter::SetParticleScale)
+        .def("GetParticleScale", &Emitter::GetParticleScale)
+        .def("SetParticleColor", &Emitter::SetParticleColor)
+        .def("GetParticleColor", &Emitter::GetParticleColor,
+             return_internal_reference<1>())
+        .def("SetParticleLifetime", &Emitter::SetParticleLifetime)
+        .def("GetParticledLifetime", &Emitter::GetParticleLifetime)
+    ; class_<DirectionalEmitter, bases<Emitter>, std::tr1::shared_ptr<DirectionalEmitter> >(
+        "DirectionalEmitter", "Class that emits particles in a given direction",
+        bp::init<float, float>())
+        .def("Create", &DirectionalEmitter::Create)
+        .staticmethod("Create")
+        .def("SetParticleVelocity", &DirectionalEmitter::SetParticleVelocity)
+        .def("GetParticleVelocity", &DirectionalEmitter::GetParticleVelocity)
+        .def("SetEmissionAngle", &DirectionalEmitter::SetEmissionAngle)
+        .def("GetEmissionAngle", &DirectionalEmitter::GetEmissionAngle)
+    ; class_<TargetEmitter, bases<Emitter>, std::tr1::shared_ptr<TargetEmitter> >(
+        "TargetEmitter", "Emits particles towards a specified target zone",
+        bp::init<float, float>())
+        .def("Create", &TargetEmitter::Create)
+        .staticmethod("Create")
+        .def("SetTargetZone", &TargetEmitter_SetTargetZone,
+             with_custodian_and_ward<1, 2>()) // keep zone as long as emitter is alive
+        .def("GetTargetZone", (Zone&(TargetEmitter::*)())&TargetEmitter::GetTargetZone,
+            return_internal_reference<1>())
+        .def("GetTargetZone", (const Zone&(TargetEmitter::*)()const)
+             &TargetEmitter::GetTargetZone, return_internal_reference<1>())
+        .def("SetParticleSpeed", &TargetEmitter::SetParticleSpeed)
+        .def("GetParticleSpeed", &TargetEmitter::GetParticleSpeed)
+    ; implicitly_convertible< std::tr1::shared_ptr<DirectionalEmitter>, std::tr1::shared_ptr<Emitter> >();
+    implicitly_convertible< std::tr1::shared_ptr<TargetEmitter>, std::tr1::shared_ptr<Emitter> >();
+
+    class_<Affector, boost::noncopyable, std::tr1::shared_ptr<Affector> >(
+        "Affector", "Abstract base class for particle affectors", no_init)
+    ; class_<ColorAffector, std::tr1::shared_ptr<ColorAffector> >("ColorAffector",
+        "Applies a color gradient to particles", bp::init<const ColorGradient&>())
+        .def("Create", &ColorAffector::Create)
+        .staticmethod("Create")
+        .def("SetGradient", &ColorAffector::SetGradient,
+             with_custodian_and_ward<1, 2>()) // keep gradient as long as affector is alive
+        .def("GetGradient", &ColorAffector::GetGradient,
+             return_internal_reference<1>())
+    ; class_<FadeInAffector, std::tr1::shared_ptr<FadeInAffector> >("FadeInAffector",
+        "Fades particles in over time", bp::init< optional<float> >())
+        .def("Create", &FadeInAffector::Create)
+        .staticmethod("Create")
+        .def("SetTimeRatio", &FadeInAffector::SetTimeRatio)
+        .def("GetTimeRatio", &FadeInAffector::GetTimeRatio)
+    ; class_<FadeOutAffector, std::tr1::shared_ptr<FadeOutAffector> >("FadeOutAffector",
+        "Fades particles out over time", bp::init< optional<float> >())
+        .def("Create", &FadeOutAffector::Create)
+        .staticmethod("Create")
+        .def("SetTimeRatio", &FadeOutAffector::SetTimeRatio)
+        .def("GetTimeRatio", &FadeOutAffector::GetTimeRatio)
+    ; class_<ForceAffector, std::tr1::shared_ptr<ForceAffector> >("ForceAffector",
+        "Applies a translational acceleration to particles over time",
+        bp::init<sf::Vector2f>())
+        .def("Create", &ForceAffector::Create)
+        .staticmethod("Create")
+        .def("SetAcceleration", &ForceAffector::SetAcceleration)
+        .def("GetAcceleration", &ForceAffector::GetAcceleration)
+    ; class_<ScaleAffector, std::tr1::shared_ptr<ScaleAffector> >("ScaleAffector",
+        "Scales particles over time", bp::init<sf::Vector2f>())
+        .def("Create", &ScaleAffector::Create)
+        .staticmethod("Create")
+        .def("SetScaleFactor", &ScaleAffector::SetScaleFactor)
+        .def("GetScaleFactor", &ScaleAffector::GetScaleFactor)
+    ; class_<TorqueAffector , std::tr1::shared_ptr<TorqueAffector > >("TorqueAffector ",
+        "Applies a rotational acceleration to particles over time",
+        bp::init<float>())
+        .def("Create", &TorqueAffector ::Create)
+        .staticmethod("Create")
+        .def("SetAngularAcceleration", &TorqueAffector::SetAngularAcceleration)
+        .def("GetAngularAcceleration", &TorqueAffector::GetAngularAcceleration)
+    ; implicitly_convertible< std::tr1::shared_ptr<ColorAffector>, std::tr1::shared_ptr<Affector> >();
+    implicitly_convertible< std::tr1::shared_ptr<FadeInAffector>, std::tr1::shared_ptr<Affector> >();
+    implicitly_convertible< std::tr1::shared_ptr<FadeOutAffector>, std::tr1::shared_ptr<Affector> >();
+    implicitly_convertible< std::tr1::shared_ptr<ForceAffector>, std::tr1::shared_ptr<Affector> >();
+    implicitly_convertible< std::tr1::shared_ptr<ScaleAffector>, std::tr1::shared_ptr<Affector> >();
+    implicitly_convertible< std::tr1::shared_ptr<TorqueAffector>, std::tr1::shared_ptr<Affector> >();
+    }
+    // Vectors
+    class_<thor::PolarVector2f>("PolarVector2f",
+        "Vector in polar coordinate system")
+        .def(bp::init<float, float>())
+        .def(bp::init<const sf::Vector2f&>())
+        .def_readwrite("r", &thor::PolarVector2f::r)
+        .def_readwrite("phi", &thor::PolarVector2f::phi)
+        .def("to_vec2f", &PolarVector2f_to_Vector2f)
+    ; def("Lenght", (float(*)(const thor::PolarVector2f&))&thor::Length);
+    def("PolarAngle", (float(*)(const thor::PolarVector2f&))&thor::PolarAngle);
 }
