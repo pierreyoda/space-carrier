@@ -1,4 +1,4 @@
-# -*-coding:Utf-8 -*
+﻿# -*-coding:Utf-8 -*
 """SpaceCarrier's global variables"""
 
 debug = False
