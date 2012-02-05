@@ -19,11 +19,12 @@ OiwEngine::~OiwEngine()
 
 bool OiwEngine::run()
 {
-    while (App.IsOpened())
+    sf::Clock frameClock;
+    while (App.IsOpen())
     {
         // Updating state
         if (m_currentState != 0)
-            m_currentState->update(App.GetFrameTime());
+            m_currentState->update(frameClock.Restart().AsMilliseconds());
 
         // Transmitting events to the state
         Event Event;

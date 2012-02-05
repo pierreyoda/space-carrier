@@ -1,6 +1,6 @@
 /*
 Space Carrier
-Copyright (C) 2011  Pierre-Yves Diallo (Pierreyoda)
+Copyright (C) 2011-2012  Pierre-Yves Diallo (Pierreyoda)
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -24,7 +24,7 @@ E-mail: pierreyoda33@gmail.com
 * Space Carrier is a top view action game where you control a mothership able to launch fighters.
 * It mainly uses SFML2, boost and Thor libraries, and features python dynamic scripting.
 *
-* Copyright (C) 2011  Pierre-Yves Diallo (Pierreyoda).
+* Copyright (C) 2011-2012  Pierre-Yves Diallo (Pierreyoda).
 *
 * Website: ...
 * E-mail: pierreyoda33@gmail.com

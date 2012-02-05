@@ -20,16 +20,10 @@ using namespace boost::python;
 
 // "thin wrappers" : auto overloading macro would be too heavy here
 void thor_stopwatch_reset(thor::StopWatch &watch) { watch.Reset(); }
-void thor_timer_reset(thor::Timer &timer, sf::Uint32 timeLimit)
+void thor_timer_reset(thor::Timer &timer, sf::Time timeLimit)
 {
     timer.Reset(timeLimit);
 }
-
-struct Shapes { }; // just for namespace exporting
-
-BOOST_PYTHON_FUNCTION_OVERLOADS(rounded_overloads, thor::Shapes::RoundedRect, 6, 8)
-BOOST_PYTHON_FUNCTION_OVERLOADS(rounded_overloads2, thor::Shapes::RoundedRect, 4, 6)
-BOOST_PYTHON_FUNCTION_OVERLOADS(polygon_overloads, thor::Shapes::Polygon, 4, 6)
 
 typedef thor::ActionMap<std::string> ActionStrMap;
 typedef thor::ActionContext<std::string> ActionContextStr;
@@ -190,7 +184,7 @@ void PythonEmbedder::exportThor()
         .def("Reset", &thor_stopwatch_reset)
     ; class_<thor::Timer>("Timer",
         "Clock class that has the semantics of a timer")
-        .def(bp::init<sf::Uint32, optional<bool> >())
+        .def(bp::init<sf::Time, optional<bool> >())
         .def("GetRemainingTime", &thor::Timer::GetRemainingTime)
         .def("IsRunning", &thor::Timer::IsRunning)
         .def("IsExpired", &thor::Timer::IsExpired)
@@ -199,18 +193,6 @@ void PythonEmbedder::exportThor()
         .def("Reset", &thor::Timer::Reset)
         .def("Reset", &thor_timer_reset)
     ;
-    // Multimedia
-    {
-    sf::Shape (*rounded1)(float, float, float, float, float, const sf::Color&,
-        float, const sf::Color&) = &thor::Shapes::RoundedRect;
-    sf::Shape (*rounded2)(sf::Vector2f, sf::Vector2f, float, const sf::Color&,
-        float, const sf::Color&) = &thor::Shapes::RoundedRect;
-    scope nested = class_<Shapes>("Shapes", "Namespace for predefined shapes",
-        no_init);
-    def("RoundedRect", rounded1, rounded_overloads());
-    def("RoundedRect", rounded2, rounded_overloads2());
-    def("Polygon", &thor::Shapes::Polygon, polygon_overloads());
-    } ; // end of sf::Shapes scope
     class_<thor::ColorGradient>("ColorGradient",
         "Class to implement color gradients", bp::init<const sf::Color&>())
         .def("GetColor", &thor::ColorGradient::GetColor)
@@ -347,33 +329,27 @@ void PythonEmbedder::exportThor()
     // Particles
     {
     using namespace thor;
-        // ParticleSystem scope
-        {
-        scope nested = class_<ParticleSystem, boost::noncopyable>("ParticleSystem",
-            "Class for simple particle systems",
-                bp::init<ResourcePtr<const sf::Texture>,
-                optional<const sf::IntRect&> >())
-            .def("Swap", &ParticleSystem::Swap)
-            .def("AddAffector", (void(ParticleSystem::*)(Affector::Ptr))
-                 &ParticleSystem::AddAffector, with_custodian_and_ward<1, 2>()) // keep affector as long as manager is alive
-            .def("RemoveAffector", &ParticleSystem::RemoveAffector)
-            .def("ClearAffectors", &ParticleSystem::ClearAffectors)
-            .def("ContainsAffector", &ParticleSystem::ContainsAffector)
-            .def("AddEmitter", (void(ParticleSystem::*)(Emitter::Ptr))
-                 &ParticleSystem::AddEmitter, with_custodian_and_ward<1, 2>()) // keep affector as long as manager is alive
-            .def("RemoveEmitter", &ParticleSystem::RemoveEmitter)
-            .def("ClearEmitters", &ParticleSystem::ClearEmitters)
-            .def("ContainsEmitter", &ParticleSystem::ContainsEmitter)
-            .def("Update", &ParticleSystem::Update)
-            .def("Draw", &ParticleSystem::Draw)
-            .def("ClearParticles", &ParticleSystem::ClearParticles)
-            .def("SetGlowing", &ParticleSystem::SetGlowing)
-            .def("IsGlowing", &ParticleSystem::IsGlowing)
-        ; class_<ParticleSystem::TimeLimit>("TimeLimit",
-            "Functor for emitter/affector removal triggered by time limit",
-            bp::init<float>())
-    ; } // end of ParticleSystem scope
-    ResourcePtr_wrapper<const sf::Texture>::wrap("TextureResourcePtrConst");
+    class_<ParticleSystem, boost::noncopyable>("ParticleSystem",
+        "Class for simple particle systems",
+            bp::init<ResourcePtr<const sf::Texture>,
+            optional<const sf::IntRect&> >())
+        .def("Swap", &ParticleSystem::Swap)
+        .def("AddAffector", (void(ParticleSystem::*)(Affector::Ptr))
+             &ParticleSystem::AddAffector, with_custodian_and_ward<1, 2>()) // keep affector as long as manager is alive
+        .def("RemoveAffector", &ParticleSystem::RemoveAffector)
+        .def("ClearAffectors", &ParticleSystem::ClearAffectors)
+        .def("ContainsAffector", &ParticleSystem::ContainsAffector)
+        .def("AddEmitter", (void(ParticleSystem::*)(Emitter::Ptr))
+             &ParticleSystem::AddEmitter, with_custodian_and_ward<1, 2>()) // keep affector as long as manager is alive
+        .def("RemoveEmitter", &ParticleSystem::RemoveEmitter)
+        .def("ClearEmitters", &ParticleSystem::ClearEmitters)
+        .def("ContainsEmitter", &ParticleSystem::ContainsEmitter)
+        .def("Update", &ParticleSystem::Update)
+        .def("Draw", &ParticleSystem::Draw)
+        .def("ClearParticles", &ParticleSystem::ClearParticles)
+        .def("SetGlowing", &ParticleSystem::SetGlowing)
+        .def("IsGlowing", &ParticleSystem::IsGlowing)
+    ; ResourcePtr_wrapper<const sf::Texture>::wrap("TextureResourcePtrConst");
     class_<Emitter, boost::noncopyable, std::tr1::shared_ptr<Emitter> >("Emitter",
         "Abstract base class for particle emitters", no_init)
         .def("SetEmissionZone", &Emitter_SetEmissionZone,
@@ -393,7 +369,7 @@ void PythonEmbedder::exportThor()
         .def("GetParticledLifetime", &Emitter::GetParticleLifetime)
     ; class_<DirectionalEmitter, bases<Emitter>, std::tr1::shared_ptr<DirectionalEmitter> >(
         "DirectionalEmitter", "Class that emits particles in a given direction",
-        bp::init<float, float>())
+        bp::init<float, sf::Time>())
         .def("Create", &DirectionalEmitter::Create)
         .staticmethod("Create")
         .def("SetParticleVelocity", &DirectionalEmitter::SetParticleVelocity)
@@ -402,7 +378,7 @@ void PythonEmbedder::exportThor()
         .def("GetEmissionAngle", &DirectionalEmitter::GetEmissionAngle)
     ; class_<TargetEmitter, bases<Emitter>, std::tr1::shared_ptr<TargetEmitter> >(
         "TargetEmitter", "Emits particles towards a specified target zone",
-        bp::init<float, float>())
+        bp::init<float, sf::Time>())
         .def("Create", &TargetEmitter::Create)
         .staticmethod("Create")
         .def("SetTargetZone", &TargetEmitter_SetTargetZone,
@@ -451,7 +427,7 @@ void PythonEmbedder::exportThor()
         .staticmethod("Create")
         .def("SetScaleFactor", &ScaleAffector::SetScaleFactor)
         .def("GetScaleFactor", &ScaleAffector::GetScaleFactor)
-    ; class_<TorqueAffector , std::tr1::shared_ptr<TorqueAffector > >("TorqueAffector ",
+    ; class_<TorqueAffector , std::tr1::shared_ptr<TorqueAffector > >("TorqueAffector",
         "Applies a rotational acceleration to particles over time",
         bp::init<float>())
         .def("Create", &TorqueAffector ::Create)

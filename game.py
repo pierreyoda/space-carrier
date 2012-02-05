@@ -66,14 +66,14 @@ class TestState (State):
 		self.engine.getRenderWindow().EnableVerticalSync(False)
 
 		# Particle test
-		particle_texture = loadTexture("data/particle.png", self.engine)
-		self.particle_system = thor.ParticleSystem(thor.NoDeletePtr(particle_texture))
-		self.particle_emitter = thor.DirectionalEmitter.Create(30.0, 50.0)
-		zone = thor.Circle(sf.Vector2f(10, 10), 10.0)
-		self.particle_emitter.SetEmissionAngle(1.0)
-		self.particle_emitter.SetEmissionZone(zone)
-		self.particle_emitter.SetParticleVelocity(thor.PolarVector2f(10, 30).to_vec2f())
-		self.particle_system.AddEmitter(self.particle_emitter)
+		# particle_texture = loadTexture("data/particle.png", self.engine)
+		# self.particle_system = thor.ParticleSystem(thor.NoDeletePtr(particle_texture))
+		# self.particle_emitter = thor.DirectionalEmitter.Create(30.0, 50.0)
+		# zone = thor.Circle(sf.Vector2f(10, 10), 10.0)
+		# self.particle_emitter.SetEmissionAngle(1.0)
+		# self.particle_emitter.SetEmissionZone(zone)
+		# self.particle_emitter.SetParticleVelocity(thor.PolarVector2f(10, 30).to_vec2f())
+		# self.particle_system.AddEmitter(self.particle_emitter)
 
 		# gradient = thor.ColorGradient(sf.Color(0, 150, 100))
 		# self.particle_system.AddAffector(thor.ColorAffector.Create(gradient))
