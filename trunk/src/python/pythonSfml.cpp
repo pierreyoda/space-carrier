@@ -66,6 +66,13 @@ struct Rect_wrapper
     }
 };
 
+/// "Thin wrapper" for sf::RenderTarget::Draw
+inline void RenderTarget_Draw(sf::RenderTarget &target,
+    const sf::Drawable &drawable)
+{
+    target.Draw(drawable);
+}
+
 /// In sf.Key class, for test purpose
 unsigned int key_as_int(const sf::Keyboard::Key &key) { return key; }
 
@@ -77,12 +84,12 @@ inline unsigned int string_invalidpos() // avoid "TypeError: No to_python (by-va
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(Create_overloads, Create, 2, 4)
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(AddPoint_overloads,  AddPoint, 2, 4) // float version
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(AddPoint_overloads2, AddPoint, 1, 3) // vector2f version
-BOOST_PYTHON_FUNCTION_OVERLOADS(Line_overloads, sf::Shape::Line, 6, 8) // same...
+/*BOOST_PYTHON_FUNCTION_OVERLOADS(Line_overloads, sf::Shape::Line, 6, 8) // same...
 BOOST_PYTHON_FUNCTION_OVERLOADS(Line_overloads2, sf::Shape::Line, 4, 6)
 BOOST_PYTHON_FUNCTION_OVERLOADS(Rectangle_overloads, sf::Shape::Rectangle, 5, 7)
 BOOST_PYTHON_FUNCTION_OVERLOADS(Rectangle_overloads2, sf::Shape::Rectangle, 2, 4)
 BOOST_PYTHON_FUNCTION_OVERLOADS(Circle_overloads, sf::Shape::Circle, 4, 6)
-BOOST_PYTHON_FUNCTION_OVERLOADS(Circle_overloads2, sf::Shape::Circle, 3, 5)
+BOOST_PYTHON_FUNCTION_OVERLOADS(Circle_overloads2, sf::Shape::Circle, 3, 5)*/
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(Image_copy, Copy, 3, 5)
 
 enum JoystickConstants
@@ -102,7 +109,33 @@ void PythonEmbedder::exportSf()
     Vector2_wrapper<unsigned int>::wrap("Vector2u");
     Rect_wrapper<int>::wrap("IntRect");
     Rect_wrapper<float>::wrap("FloatRect");
-    class_<sf::Color>("Color", "Utility class for manpulating RGBA colors")
+    class_<sf::Time>("Time", "Represents a time value")
+        .def("AsSeconds", &sf::Time::AsSeconds)
+        .def("AsMilliseconds", &sf::Time::AsMilliseconds)
+        .def("AsMicroseconds", &sf::Time::AsMicroseconds)
+        .add_static_property("Zero", &sf::Time::Zero)
+        .def(self == other<sf::Time>())
+        .def(self != other<sf::Time>())
+        .def(self < other<sf::Time>())
+        .def(self > other<sf::Time>())
+        .def(self <= other<sf::Time>())
+        .def(self >= other<sf::Time>())
+        .def(-self)
+        .def(self + other<sf::Time>())
+        .def(self += other<sf::Time>())
+        .def(self - other<sf::Time>())
+        .def(self -= other<sf::Time>())
+        .def(self * float())
+        .def(self * sf::Int64())
+        .def(float() * self)
+        .def(sf::Int64()* self)
+        .def(self *= float())
+        .def(self *= sf::Int64())
+        .def(self / float())
+        .def(self / sf::Int64())
+        .def(self /= float())
+        .def(self /= sf::Int64())
+    ; class_<sf::Color>("Color", "Utility class for manpulating RGBA colors")
         .def(bp::init<sf::Uint8, sf::Uint8, sf::Uint8, optional<sf::Uint8> >())
         .def_readwrite("r", &sf::Color::r)
         .def_readwrite("g", &sf::Color::g)
@@ -145,39 +178,66 @@ void PythonEmbedder::exportSf()
                 (sf::String::ConstIterator(sf::String::*)()const)&sf::String::End))
         .add_static_property("InvalidPos", &string_invalidpos)
     ; implicitly_convertible<std::wstring, sf::String>();
+    {
+    sf::Transform& (sf::Transform::*translate1)(float, float) = &sf::Transform::Translate;
+    sf::Transform& (sf::Transform::*translate2)(const sf::Vector2f&) = &sf::Transform::Translate;
+    sf::Transform& (sf::Transform::*rotate1)(float) = &sf::Transform::Rotate;
+    sf::Transform& (sf::Transform::*rotate2)(float, float, float) = &sf::Transform::Rotate;
+    sf::Transform& (sf::Transform::*rotate3)(float, const sf::Vector2f&) = &sf::Transform::Rotate;
+    sf::Transform& (sf::Transform::*scale1)(float, float) = &sf::Transform::Scale;
+    sf::Transform& (sf::Transform::*scale2)(float, float, float, float) = &sf::Transform::Scale;
+    sf::Transform& (sf::Transform::*scale3)(const sf::Vector2f&) = &sf::Transform::Scale;
+    sf::Transform& (sf::Transform::*scale4)(const sf::Vector2f&, const sf::Vector2f&) = &sf::Transform::Scale;
+    class_<sf::Transform>("Transform",
+            "Define a 3x3 transform matrix")
+            .def(bp::init<float, float, float, float, float, float, float, float, float>())
+            /*.def("GetMatrix", &sf::Transform::GetMatrix,
+                return_internal_reference<>())*/
+            .def("GetInverse", &sf::Transform::GetInverse)
+            .method_const(sf::Transform, TransformPoint, sf::Vector2f, float,
+                float)
+            .method_const(sf::Transform, TransformPoint, sf::Vector2f,
+                const sf::Vector2f&)
+            .def("TransformRect", &sf::Transform::TransformRect)
+            .def("Combine", &sf::Transform::Combine)
+            .def("Translate", translate1, return_internal_reference<>())
+            .def("Translate", translate2, return_internal_reference<>())
+            .def("Rotate", rotate1, return_internal_reference<>())
+            .def("Rotate", rotate2, return_internal_reference<>())
+            .def("Rotate", rotate3, return_internal_reference<>())
+            .def("Scale", scale1, return_internal_reference<>())
+            .def("Scale", scale2, return_internal_reference<>())
+            .def("Scale", scale3, return_internal_reference<>())
+            .def("Scale", scale4, return_internal_reference<>())
+    ; }
     class_<sf::Drawable, boost::noncopyable>("Drawable",
         "Abstract base class for objects that can be drawn to a render target",
         no_init)
-        .method(sf::Drawable, SetPosition, void, float, float)
-        .method(sf::Drawable, SetPosition, void, const sf::Vector2f&)
-        .def("SetX", &sf::Drawable::SetX)
-        .def("SetY", &sf::Drawable::SetY)
-        .method(sf::Drawable, SetScale, void, float, float)
-        .method(sf::Drawable, SetScale, void, const sf::Vector2f&)
-        .def("SetScaleX", &sf::Drawable::SetScaleX)
-        .def("SetScaleY", &sf::Drawable::SetScaleY)
-        .method(sf::Drawable, SetOrigin, void, const sf::Vector2f&)
-        .method(sf::Drawable, SetOrigin, void, float, float)
-        .def("SetRotation", &sf::Drawable::SetRotation)
-        .def("SetColor", &sf::Drawable::SetColor)
-        .def("SetBlendMode", &sf::Drawable::SetBlendMode)
-        .def("GetPosition", &sf::Drawable::GetPosition,
+    ; class_<sf::Transformable, boost::noncopyable>("Transformable",
+        "Decomposed transform defined by a position, a rotation and a scale")
+        .method(sf::Transformable, SetPosition, void, float, float)
+        .method(sf::Transformable, SetPosition, void, const sf::Vector2f&)
+        .def("SetRotation", &sf::Transformable::SetRotation)
+        .method(sf::Transformable, SetScale, void, float, float)
+        .method(sf::Transformable, SetScale, void, const sf::Vector2f&)
+        .method(sf::Transformable, SetOrigin, void, const sf::Vector2f&)
+        .method(sf::Transformable, SetOrigin, void, float, float)
+        .def("GetPosition", &sf::Transformable::GetPosition,
             return_value_policy<copy_const_reference>())
-        .def("GetScale", &sf::Drawable::GetScale,
+        .def("GetRotation", &sf::Transformable::GetRotation)
+        .def("GetScale", &sf::Transformable::GetScale,
             return_value_policy<copy_const_reference>())
-        .def("GetOrigin", &sf::Drawable::GetOrigin,
+        .def("GetOrigin", &sf::Transformable::GetOrigin,
             return_value_policy<copy_const_reference>())
-        .def("GetRotation", &sf::Drawable::GetRotation)
-        .def("GetColor", &sf::Drawable::GetColor,
-            return_value_policy<reference_existing_object>())
-        .def("GetBlendMode", &sf::Drawable::GetBlendMode)
-        .method(sf::Drawable, Move, void, float, float)
-        .method(sf::Drawable, Move, void, const sf::Vector2f&)
-        .method(sf::Drawable, Scale, void, float, float)
-        .method(sf::Drawable, Scale, void, const sf::Vector2f&)
-        .def("Rotate", &sf::Drawable::Rotate)
-        .def("TransformToLocal", &sf::Drawable::TransformToLocal)
-        .def("TransformToGlobal", &sf::Drawable::TransformToGlobal)
+        .method(sf::Transformable, Move, void, float, float)
+        .method(sf::Transformable, Move, void, const sf::Vector2f&)
+        .def("Rotate", &sf::Transformable::Rotate)
+        .method(sf::Transformable, Scale, void, float, float)
+        .method(sf::Transformable, Scale, void, const sf::Vector2f&)
+        .def("GetTransform", &sf::Transformable::GetTransform,
+            return_value_policy<copy_const_reference>())
+        .def("GetInverseTransform", &sf::Transformable::GetInverseTransform,
+            return_value_policy<copy_const_reference>())
     ; class_<sf::Image>("Image",
         "Class for loading, manipulating and saving images")
         .method(sf::Image, Create, void, unsigned int, unsigned int,
@@ -214,79 +274,79 @@ void PythonEmbedder::exportSf()
         .method(sf::Texture, Update, void, const sf::Window&)
         .method(sf::Texture, Update, void, const sf::Window&, unsigned int,
             unsigned int)
-        .def("Bind", &sf::Texture::Bind)
+        //.def("Bind", &sf::Texture::Bind)
         .def("SetSmooth", &sf::Texture::SetSmooth)
         .def("IsSmooth", &sf::Texture::IsSmooth)
-        .def("GetTexCoords", &sf::Texture::GetTexCoords)
+        .def("SetRepeated", &sf::Texture::SetRepeated)
+        .def("IsRepeated", &sf::Texture::IsRepeated)
         .def("GetMaximumSize", &sf::Texture::GetMaximumSize)
         .staticmethod("GetMaximumSize")
-    ; enum_<sf::Blend::Mode>("Blend",
-        "Available blending modes for drawable objects")
-        .value("Alpha", sf::Blend::Alpha)
-        .value("Add", sf::Blend::Add)
-        .value("Multiply", sf::Blend::Multiply)
-        .value("None", sf::Blend::None)
-    ; class_<sf::Sprite, bases<sf::Drawable> >("Sprite",
-        "Drawable representation of an image, with its own transformations, color, blend mode, etc. ")
-        .def(bp::init< optional<sf::Texture&> >())
+    ; enum_<sf::BlendMode>("BlendMode",
+        "Available blending modes for drawing")
+        .value("Alpha", sf::BlendAlpha)
+        .value("Add", sf::BlendAdd)
+        .value("Multiply", sf::BlendMultiply)
+        .value("None", sf::BlendNone)
+    ; class_<sf::Sprite, bases<sf::Drawable, sf::Transformable> >("Sprite",
+        "Drawable representation of an image, with its own transformations, color, etc")
+        .def(bp::init<sf::Texture&>())
+        .def(bp::init<sf::Texture&, const sf::IntRect&>())
         .method(sf::Sprite, SetTexture, void, const sf::Texture&)
         .method(sf::Sprite, SetTexture, void, const sf::Texture&, bool)
-        .def("SetSubRect", &sf::Sprite::SetSubRect)
-        .method(sf::Sprite, Resize, void, float, float)
-        .method(sf::Sprite, Resize, void, const sf::Vector2f&)
-        .def("FlipX", &sf::Sprite::FlipX)
-        .def("FlipY", &sf::Sprite::FlipY)
+        .def("SetTextureRect", &sf::Sprite::SetTextureRect)
+        .def("SetColor", &sf::Sprite::SetColor)
         .def("GetTexture", &sf::Sprite::GetTexture,
             return_internal_reference<>())
-        .def("GetSubRect", &sf::Sprite::GetSubRect,
+        .def("GetTextureRect", &sf::Sprite::GetTextureRect,
             return_value_policy<reference_existing_object>())
-        .def("GetSize", &sf::Sprite::GetSize)
-    ;
-    void (sf::Shape::*ap1)(float, float, const sf::Color&, const sf::Color&) =
-        &sf::Shape::AddPoint;
-    void (sf::Shape::*ap2)(const sf::Vector2f&, const sf::Color&,
-        const sf::Color&) = &sf::Shape::AddPoint;
-    sf::Shape (*line1)(float, float, float, float, float,
-        const sf::Color&, float, const sf::Color&) = &sf::Shape::Line;
-    sf::Shape (*line2)(const sf::Vector2f&, const sf::Vector2f&,
-        float, const sf::Color&, float, const sf::Color&) = &sf::Shape::Line;
-    sf::Shape (*recta1)(float, float, float, float, const sf::Color&, float,
-        const sf::Color&) = &sf::Shape::Rectangle;
-    sf::Shape (*recta2)(const sf::FloatRect&, const sf::Color&, float,
-        const sf::Color&) = &sf::Shape::Rectangle;
-    sf::Shape (*circle1)(float, float, float, const sf::Color&, float,
-        const sf::Color&) = &sf::Shape::Circle;
-    sf::Shape (*circle2)(const sf::Vector2f&, float, const sf::Color&, float,
-        const sf::Color&) = &sf::Shape::Circle;
-    ; class_<sf::Shape, bases<sf::Drawable> >("Shape",
-        "A convex, colored polygon with an optional outline")
-        .def("AddPoint", ap1, AddPoint_overloads())
-        .def("AddPoint", ap2, AddPoint_overloads2())
-        .def("GetPointsCount", &sf::Shape::GetPointsCount)
-        .def("EnableFill", &sf::Shape::EnableFill)
-        .def("EnableOutline", &sf::Shape::EnableOutline)
-        .method(sf::Shape, SetPointPosition, void, unsigned int,
-            const sf::Vector2f&)
-        .method(sf::Shape, SetPointPosition, void, unsigned int, float, float)
-        .def("SetPointColor", &sf::Shape::SetPointColor)
-        .def("SetPointOutlineColor", &sf::Shape::SetPointOutlineColor)
+        .def("GetColor", &sf::Sprite::GetColor,
+            return_value_policy<reference_existing_object>())
+        .def("GetLocalBounds", &sf::Sprite::GetLocalBounds)
+        .def("GetGlobalBounds", &sf::Sprite::GetGlobalBounds)
+    ; class_<sf::Shape, bases<sf::Drawable, sf::Transformable>,
+            boost::noncopyable>("Shape",
+            "Base class for textured shapes with outline", no_init)
+        .method(sf::Shape, SetTexture, void, const sf::Texture&)
+        .method(sf::Shape, SetTexture, void, const sf::Texture&, bool)
+        .def("SetTextureRect", &sf::Shape::SetTextureRect)
+        .def("SetFillColor", &sf::Shape::SetFillColor)
+        .def("SetOutlineColor", &sf::Shape::SetOutlineColor)
         .def("SetOutlineThickness", &sf::Shape::SetOutlineThickness)
-        .def("GetPointPosition", &sf::Shape::GetPointPosition,
+        .def("GetTexture", &sf::Shape::GetTexture,
+            return_internal_reference<>())
+        .def("GetTextureRect", &sf::Shape::GetTextureRect,
             return_value_policy<reference_existing_object>())
-        .def("GetPointColor", &sf::Shape::GetPointColor,
+        .def("GetFillColor", &sf::Shape::GetFillColor,
             return_value_policy<reference_existing_object>())
-        .def("GetPointOutlineColor", &sf::Shape::GetPointOutlineColor,
+        .def("GetOutlineColor", &sf::Shape::GetOutlineColor,
             return_value_policy<reference_existing_object>())
         .def("GetOutlineThickness", &sf::Shape::GetOutlineThickness)
-        .def("Line", line1, Line_overloads())
-        .def("Line", line2, Line_overloads2())
-        .def("Rectangle", recta1, Rectangle_overloads())
-        .def("Rectangle", recta2, Rectangle_overloads2())
-        .def("Circle", circle1, Circle_overloads())
-        .def("Circle", circle2, Circle_overloads2())
-        .staticmethod("Line")
-        .staticmethod("Rectangle")
-        .staticmethod("Circle")
+        /*.def("GetPointCount", pure_virtual(&sf::Shape::GetPointCount))
+        .def("GetPoint", pure_virtual(&sf::Shape::GetPoint))*/
+        .def("GetLocalBounds", &sf::Sprite::GetLocalBounds)
+        .def("GetGlobalBounds", &sf::Sprite::GetGlobalBounds)
+    ; class_<sf::CircleShape, bases<sf::Shape> >("CircleShape",
+        "Specialized shape representing a circle",
+        bp::init< optional<float, unsigned int> >())
+        .def("SetRadius", &sf::CircleShape::SetRadius)
+        .def("GetRadius", &sf::CircleShape::GetRadius)
+        .def("GetPointCount", &sf::CircleShape::GetPointCount)
+        .def("GetPoint", &sf::CircleShape::GetPoint)
+    ; class_<sf::ConvexShape, bases<sf::Shape> >("ConvexShape",
+        "Specialized shape representing a convex polygon",
+        bp::init< optional<unsigned int> >())
+        .def("SetPointCount", &sf::ConvexShape::SetPointCount)
+        .def("GetPointCount", &sf::ConvexShape::GetPointCount)
+        .def("SetPoint", &sf::ConvexShape::SetPoint)
+        .def("GetPoint", &sf::ConvexShape::GetPoint)
+    ; class_<sf::RectangleShape, bases<sf::Shape> >("RectangleShape",
+        "Specialized shape representing a rectangle",
+        bp::init< optional<const sf::Vector2f&> >())
+        .def("SetSize", &sf::RectangleShape::SetSize)
+        .def("GetSize", &sf::RectangleShape::GetSize,
+            return_value_policy<reference_existing_object>())
+        .def("GetPointCount", &sf::CircleShape::GetPointCount)
+        .def("GetPoint", &sf::CircleShape::GetPoint)
     ; class_<sf::Font>("Font",
         "Class for loading and manipulating character fonts")
         .def(bp::init<const sf::Font&>())
@@ -299,21 +359,25 @@ void PythonEmbedder::exportSf()
         .def("GetDefaultFont", &sf::Font::GetDefaultFont,
              return_value_policy<reference_existing_object>())
         .staticmethod("GetDefaultFont")
-    ; { scope nested = class_<sf::Text, bases<sf::Drawable> >("Text",
+    ; { scope nested = class_<sf::Text, bases<sf::Drawable, sf::Transformable> >("Text",
         "Graphical text that can be drawn to a render target")
         .def(bp::init<const sf::String&, optional<const sf::Font&, unsigned int> >())
         .def("SetString", &sf::Text::SetString)
         .def("SetFont", &sf::Text::SetFont)
         .def("SetCharacterSize", &sf::Text::SetCharacterSize)
         .def("SetStyle", &sf::Text::SetStyle)
+        .def("SetColor", &sf::Text::SetColor)
         .def("GetString", &sf::Text::GetString,
             return_value_policy<reference_existing_object>())
         .def("GetFont", &sf::Text::GetFont,
             return_value_policy<reference_existing_object>())
         .def("GetCharacterSize", &sf::Text::GetCharacterSize)
         .def("GetStyle", &sf::Text::GetStyle)
-        .def("GetCharacterPos", &sf::Text::GetCharacterPos)
-        .def("GetRect", &sf::Text::GetRect)
+        .def("GetColor", &sf::Text::GetColor,
+            return_value_policy<reference_existing_object>())
+        .def("FindCharacterPos", &sf::Text::FindCharacterPos)
+        .def("GetLocalBounds", &sf::Sprite::GetLocalBounds)
+        .def("GetGlobalBounds", &sf::Sprite::GetGlobalBounds)
         ; enum_<sf::Text::Style>("Style",
             "Enumeration of the string drawing styles")
             .value("Regular", sf::Text::Regular)
@@ -330,11 +394,7 @@ void PythonEmbedder::exportSf()
         .method(sf::View, SetCenter, void, const sf::Vector2f&)
         .method(sf::View, SetSize, void, float, float)
         .method(sf::View, SetSize, void, const sf::Vector2f&)
-        .method(sf::View, Move, void, float, float)
-        .method(sf::View, Move, void, const sf::Vector2f&)
-        .def("Rotate", &sf::View::Rotate)
         .def("SetRotation", &sf::View::SetRotation)
-        .def("Zoom", &sf::View::Zoom)
         .def("SetViewport", &sf::View::SetViewport)
         .def("Reset", &sf::View::Reset)
         .def("GetCenter", &sf::View::GetCenter,
@@ -344,15 +404,31 @@ void PythonEmbedder::exportSf()
         .def("GetRotation", &sf::View::GetRotation)
         .def("GetViewport", &sf::View::GetViewport,
             return_value_policy<reference_existing_object>())
+        .method(sf::View, Move, void, float, float)
+        .method(sf::View, Move, void, const sf::Vector2f&)
+        .def("Rotate", &sf::View::Rotate)
+        .def("Zoom", &sf::View::Zoom)
+        /*.def("GetTransform", &sf::Transformable::GetTransform,
+            return_value_policy<copy_const_reference>())
+        .def("GetInverseTransform", &sf::Transformable::GetInverseTransform,
+            return_value_policy<copy_const_reference>())*/
+    ; class_<sf::RenderStates>("RenderStates",
+        "Define the states used for drawing to a RenderTarget")
+        .def(bp::init<sf::BlendMode>())
+        .def(bp::init<const sf::Transform&>())
+        .def(bp::init<const sf::Texture*>())
+        .def(bp::init<const sf::Shader*>())
+        .def(bp::init<sf::BlendMode, const sf::Transform&, const sf::Texture*,
+             const sf::Shader*>())
+        .def_readwrite("BlendMode", &sf::RenderStates::BlendMode)
+        .def_readwrite("Transform", &sf::RenderStates::Transform)
+        .def_readwrite("Texture", &sf::RenderStates::Texture)
+        .def_readwrite("Shader", &sf::RenderStates::Shader)
+        .add_static_property("Default", &sf::RenderStates::Default)
     ; class_<sf::RenderTarget, boost::noncopyable>("RenderTarget",
         "Base class for all render targets (window, image, ...)", no_init)
         .method(sf::RenderTarget, Clear, void, void)
         .method(sf::RenderTarget, Clear, void, const sf::Color&)
-        .method(sf::RenderTarget, Draw, void, const sf::Drawable&)
-        .method(sf::RenderTarget, Draw, void, const sf::Drawable&,
-            const sf::Shader&)
-        .def("GetWidth", &sf::RenderTarget::GetWidth)
-        .def("GetHeight", &sf::RenderTarget::GetHeight)
         .def("SetView", &sf::RenderTarget::SetView)
         .def("GetView", &sf::RenderTarget::GetView,
             return_value_policy<reference_existing_object>())
@@ -363,12 +439,19 @@ void PythonEmbedder::exportSf()
             unsigned int, unsigned int)
         .method_const(sf::RenderTarget, ConvertCoords, sf::Vector2f,
             unsigned int, unsigned int, const sf::View&)
+        .method(sf::RenderTarget, Draw, void, const sf::Drawable&, const sf::RenderStates&)
+        .def("Draw", &RenderTarget_Draw) // only 1 argument (drawable)
+        .def("GetWidth", &sf::RenderTarget::GetWidth)
+        .def("GetHeight", &sf::RenderTarget::GetHeight)
+        .def("PushGLStates", &sf::RenderTarget::PushGLStates)
+        .def("PopGLStates", &sf::RenderTarget::PopGLStates)
+        .def("ResetGLStates", &sf::RenderTarget::ResetGLStates)
     ; class_<sf::Window, boost::noncopyable>("Window",
         "Window that serves as a target for OpenGL rendering")
         .def(bp::init<sf::VideoMode, const std::string&, optional<
              unsigned long, const sf::ContextSettings&> >())
         .def("Close", &sf::Window::Close)
-        .def("IsOpened", &sf::Window::IsOpened)
+        .def("IsOpen", &sf::Window::IsOpen)
         .def("GetWidth", &sf::Window::GetWidth)
         .def("GetHeight", &sf::Window::GetHeight)
         .def("GetSettings", &sf::Window::GetSettings,
@@ -386,7 +469,6 @@ void PythonEmbedder::exportSf()
         .def("SetActive", &sf::Window::SetActive)
         .def("Display", &sf::Window::Display)
         .def("SetFramerateLimit", &sf::Window::SetFramerateLimit)
-        .def("GetFrameTime", &sf::Window::GetFrameTime)
         .def("SetJoystickThreshold", &sf::Window::SetJoystickThreshold)
     ; class_<sf::RenderWindow, bases<sf::RenderTarget, sf::Window>, boost::noncopyable>(
         "RenderWindow", "Window that can serve as a target for 2D drawing")

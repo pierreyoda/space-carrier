@@ -3,7 +3,7 @@
 
 import sf
 from OiwEngine import Entity
-from .entities_tools import loadTexture, originAtCenter
+from .entities_tools import loadTexture, spriteSize, originAtCenter
 from .module import *
 from . import globals
 from math import degrees, cos, sin
@@ -71,12 +71,12 @@ class SpaceShip (Entity):
 	def update_modules_pos(self):
 		size = self.getSize()
 		for module in self.modules.values():
-			module.pos = self.sprite_hull.TransformToGlobal(module.relative_pos+module.sprite.GetSize()/2)
+			module.pos = self.sprite_hull.GetTransform().TransformPoint(
+				module.relative_pos + spriteSize(module.sprite)/2)
 			module.sprite.SetPosition(module.pos)
 
 	def getSize(self): #TODO : take in acoount modules
-		return sf.Vector2f(self.sprite_hull.GetSubRect().Width,
-			self.sprite_hull.GetSubRect().Height)
+		return spriteSize(self.sprite_hull)
 
 	def transformToLocal(self, point):
 		return self.sprites[hull].TransformToLocal(point)

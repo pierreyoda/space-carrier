@@ -16,10 +16,15 @@ def loadTexture(path, engine):
 		raise RuntimeError("cannot load texture '" + path + "'")
 	return texture.get()
 
+def spriteSize(sprite):
+	"""Compute a sprite's size, taking in account its scale"""
+	bounds, scale = sprite.GetLocalBounds(), sprite.GetScale()
+	return sf.Vector2f(bounds.Width * scale.x, bounds.Height * scale.y)
+
 def originAtCenter(sprite):
 	"""Define sprite's origin at his center"""
-	subrect = sprite.GetSubRect()
-	sprite.SetOrigin(subrect.Width/2, subrect.Height/2)
+	size = spriteSize(sprite)
+	sprite.SetOrigin(size.x/2, size.y/2)
 
 
 class SpriteBasedEntity (Entity):
@@ -53,10 +58,11 @@ class SpriteBasedEntity (Entity):
 		return self.sprite.GetSize()
 
 	def transformToLocal(self, point):
-		return self.sprite.TransformToLocal(point)
+		# return self.sprite.TransformToLocal(point)
+		raise NotImplementedError("SpriteBasedEntity.transformToLocal is not implemented yet")
 
 	def transformToGlobal(self, point):
-		return self.sprite.TransformToGlobal(point)
+		return self.sprite.GetTransform().TransformPoint(point)
 
 
 class FpsCounter (Entity):
@@ -79,7 +85,7 @@ class FpsCounter (Entity):
 
 	def update(self, elapsed_time):
 		fps = FpsCounter.compute_fps(elapsed_time)
-		if self.clock.GetElapsedTime() < self.refresh_time:
+		if self.clock.GetElapsedTime().AsMilliseconds() < self.refresh_time:
 			return True
 		self.fps.SetString("FPS : {}".format(fps))
 		self.clock.Reset(True)

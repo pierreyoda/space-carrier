@@ -44,7 +44,7 @@ class Module (Entity):
 		# drawn subrect - if not specified, use the whole image
 		self.rect = infos.rect if infos.rect is not None\
 			else sf.IntRect(0, 0, self.texture.GetWidth(), self.texture.GetHeight())
-		self.sprite.SetSubRect(self.rect)
+		self.sprite.SetTextureRect(self.rect)
 		originAtCenter(self.sprite)
 		self.relative_pos = infos.relative_pos if infos.relative_pos is not None else \
 			sf.Vector2f(self.rect.Left, self.rect.Top)
@@ -57,8 +57,8 @@ class Module (Entity):
 		return True
 
 	def getSize(self):
-		return sf.Vector2f(self.sprite.GetSubRect().Width,
-			self.sprite.GetSubRect().Height)
+		return sf.Vector2f(self.sprite.GetTextureRect().Width,
+			self.sprite.GetTextureRect().Height)
 
 	def update_angle(self):
 		self.sprite.SetRotation(degrees(self.angle) - 90.0) # angle is whith the abscissa

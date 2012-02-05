@@ -8,6 +8,7 @@
 
 /** \brief An abstract class representing a game entity.
 *An entity is defined mainly by a position, an angle and a string identifier (or ID).
+*Inherits from sf::Drawable and owns a sf::Transformable.
 */
 class Entity
 {
@@ -172,6 +173,7 @@ class Entity
         const std::string m_id;
         sf::Vector2f m_pos;
         float m_angle, m_speed;
+        //sf::Transformable m_tranform;
         CollisionTable m_collisionTable;
 };
 
