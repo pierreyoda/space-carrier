@@ -3,7 +3,7 @@
 
 #include <list>
 #include <string>
-#include <SFML/Config.hpp>
+#include <SFML/System/Time.hpp>
 #include "EntityCollisions.hpp"
 
 struct Entity;
@@ -46,14 +46,14 @@ class EntityManager
         * \param target Target where the entities will be rendered.
         *
         */
-        void renderAll(sf::RenderTarget &target);
+        void drawAll(sf::RenderTarget &target);
 
         /** \brief Update all entities.
         *
         * \param elapsedTime Time elapsed since the last update (i.e. the last frame).
         *
         */
-        void updateAll(const sf::Uint32 &elapsedTime);
+        void updateAll(const sf::Time &elapsedTime);
 
     private:
         EntityManager(const EntityManager &copy) { } // non copyable

@@ -24,8 +24,8 @@ bool EntityCollisions::pixelPerfectTest(const Entity &object1,
         for (int i = intersection.Left; i < size.x; i++)
             for (int j = intersection.Top; j < size.y; j++)
             {
-                o1v = object1.transformToLocal(sf::Vector2f(i, j)); //Creating Objects each loop :(
-                o2v = object2.transformToLocal(sf::Vector2f(i, j));
+                o1v = object1.GetInverseTransform().TransformPoint(sf::Vector2f(i, j)); //Creating Objects each loop :(
+                o2v = object2.GetInverseTransform().TransformPoint(sf::Vector2f(i, j)); //Creating Objects each loop :(
                 //If both sprites have opaque pixels at the same point we've got a hit
                 if (object1.isPixelPresent(o1v) && object2.isPixelPresent(o2v))
                     return true;
@@ -40,9 +40,9 @@ IntRect EntityCollisions::getAABB(const Entity &entity)
     // Store the sprite subrect
     IntRect subrect = entity.getSubRect();
     // Bail out early if the sprite isn't rotated
-    if (entity.angle() == 0.0f)
-        return IntRect(static_cast<int>(entity.pos().x),
-                       static_cast<int>(entity.pos().y),
+    if (entity.GetRotation() == 0.0f)
+        return IntRect(static_cast<int>(entity.GetPosition().x),
+                       static_cast<int>(entity.GetPosition().y),
                        static_cast<int>(subrect.Width),
                        static_cast<int>(subrect.Height));
     // Get the local position of each of the points
@@ -51,10 +51,10 @@ IntRect EntityCollisions::getAABB(const Entity &entity)
         right = subrect.Left + subrect.Width,
         bottom = subrect.Top + subrect.Height;
     // Calculate sprite corners as global coordinates
-    Vector2f A(entity.transformToGlobal(Vector2f(left, top))),
-        B(entity.transformToGlobal(Vector2f(right, top))),
-        C(entity.transformToGlobal(Vector2f(left, bottom))),
-        D(entity.transformToGlobal(Vector2f(right, bottom)));
+    Vector2f A(entity.GetTransform().TransformPoint(Vector2f(left, top))),
+        B(entity.GetTransform().TransformPoint(Vector2f(right, top))),
+        C(entity.GetTransform().TransformPoint(Vector2f(left, bottom))),
+        D(entity.GetTransform().TransformPoint(Vector2f(right, bottom)));
 
     // Round off to int and set the four corners of our Rect
     int Left = static_cast<int> (minValue(A.x, B.x, C.x, D.x));

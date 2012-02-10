@@ -26,7 +26,7 @@ class State
         * \param elapsedTime Time elapsed since the last update (i.e. the last frame).
         *
         */
-        virtual void update(const sf::Uint32 &elapsedTime) = 0;
+        virtual void update(const sf::Time &elapsedTime) = 0;
 
         /** \brief Render the state.
         *

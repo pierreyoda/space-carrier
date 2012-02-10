@@ -24,7 +24,7 @@ bool OiwEngine::run()
     {
         // Updating state
         if (m_currentState != 0)
-            m_currentState->update(frameClock.Restart().AsMilliseconds());
+            m_currentState->update(frameClock.Restart());
 
         // Transmitting events to the state
         Event Event;

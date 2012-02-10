@@ -26,10 +26,8 @@ class SpaceShip (Entity):
 		if "hull" not in self.textures.keys() or self.textures["hull"] == None:
 			subclass.textures["hull"] = loadTexture(subclass.textures_paths["hull"], engine)
 		self.sprite_hull = sf.Sprite(subclass.textures["hull"])
-		originAtCenter(self.sprite_hull)
+		originAtCenter(self)
 		self.modules = { }
-		self.update_angle()
-		self.sprite_hull.SetPosition(self.pos)
 		#self.collision_table = CollisionTable(self.sprite.GetTexture().CopyToImage())
 		self.init_modules(engine)
 
@@ -47,39 +45,20 @@ class SpaceShip (Entity):
 			self.modules[name] = Module("{}-{}".format(self.id, name), engine,
 				modules_infos[name])
 
-	def render(self, target):
+	def Draw(self, target, states):
+		states.Transform *= self.GetTransform()
 		if globals.debug:
-			target.Draw(self.sprite_hull)
+			target.Draw(self.sprite_hull, states)
 			for module in self.modules.values():
-					module.render(target)
+					target.Draw(module, states)
 		else:
 			for module in self.modules.values():
 				if module.infos.draw:
-					module.render(target)
-			target.Draw(self.sprite_hull)
+					target.Draw(module, states)
+			target.Draw(self.sprite_hull, states)
 
 	def update(self, elapsed_time):
 		return True
 
-	def update_angle(self):
-		self.sprite_hull.SetRotation(degrees(self.angle) - 90.0) # angle is whith the abscissa
-		for module in self.modules.values():
-			module.angle = self.angle
-			module.update_angle()
-		self.update_modules_pos()
-
-	def update_modules_pos(self):
-		size = self.getSize()
-		for module in self.modules.values():
-			module.pos = self.sprite_hull.GetTransform().TransformPoint(
-				module.relative_pos + spriteSize(module.sprite)/2)
-			module.sprite.SetPosition(module.pos)
-
 	def getSize(self): #TODO : take in acoount modules
 		return spriteSize(self.sprite_hull)
-
-	def transformToLocal(self, point):
-		return self.sprites[hull].TransformToLocal(point)
-
-	def transformToGlobal(self, point):
-		return self.sprites[hull].TransformToGlobal(point)

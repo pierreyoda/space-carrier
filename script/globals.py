@@ -3,3 +3,4 @@
 
 debug = False
 action_map = None
+camera = None

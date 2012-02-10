@@ -14,14 +14,14 @@ EntityManager::~EntityManager()
 
 }
 
-void EntityManager::renderAll(sf::RenderTarget &target)
+void EntityManager::drawAll(sf::RenderTarget &target)
 {
     for (list<Entity*>::iterator it = m_entities.begin();
         it != m_entities.end(); it++)
-        (*it)->render(target); // no NULL-check : addEntity is secured, and updateAll already handles that case
+        target.Draw(*(*it)); // no NULL-check : addEntity is secured, and updateAll already handles that case
 }
 
-void EntityManager::updateAll(const sf::Uint32 &elapsedTime)
+void EntityManager::updateAll(const sf::Time &elapsedTime)
 {
     for (list<Entity*>::iterator it = m_entities.begin();
         it != m_entities.end(); it++)
