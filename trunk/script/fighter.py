@@ -4,7 +4,6 @@
 from sf import IntRect, Color
 from .spaceship import *
 from .module import *
-from .entities_tools import half_pi
 from . import globals
 
 class Fighter (SpaceShip):
@@ -28,20 +27,15 @@ class Fighter (SpaceShip):
 
 	def __init__(self, engine, id=None):
 		SpaceShip.__init__(self, engine, id)
-		self.angle = half_pi # pi/2 = 90°
+		self.angle = 90
 		self.pos = (400, 300)
-		self.sprite_hull.SetPosition(self.pos)
-		self.update_angle()
 
 	def update(self, elapsed_time):
 		global action_map
-
 		if not SpaceShip.update(self, elapsed_time):
 			return False
 		if globals.action_map.IsActive("player_rotate_left"):
-			self.angle -= elapsed_time / 500
-			self.update_angle()
+			self.angle -= elapsed_time.AsSeconds() * 250
 		elif globals.action_map.IsActive("player_rotate_right"):
-			self.angle += elapsed_time / 500
-			self.update_angle()
+			self.angle += elapsed_time.AsSeconds() * 250
 		return True

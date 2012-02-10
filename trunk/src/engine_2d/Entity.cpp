@@ -1,61 +1,17 @@
 #include <SFML/Graphics.hpp>
+#include <thor/Math.hpp>
 #include "Entity.hpp"
 
 Entity::Entity(const std::string &id, const sf::Vector2f &pos,
-    const float &angle, const float &speed) : m_id(id), m_pos(pos),
-    m_angle(angle), m_speed(speed)
+    const float &angle) : sf::Drawable(), sf::Transformable(), m_id(id)
 {
-
+    SetPosition(pos);
+    SetRotation(angle);
 }
 
 Entity::~Entity()
 {
 
-}
-
-float Entity::angle() const
-{
-    return m_angle;
-}
-
-void Entity::setAngle(const float &angle)
-{
-    m_angle = angle;
-}
-
-void Entity::changeAngle(const float &diff)
-{
-    m_angle += diff;
-}
-
-float Entity::speed() const
-{
-    return m_speed;
-}
-
-void Entity::setSpeed(const float &speed)
-{
-    m_speed = speed;
-}
-
-void Entity::changeSpeed(const float &diff)
-{
-    m_speed += diff;
-}
-
-const sf::Vector2f &Entity::pos() const
-{
-    return m_pos;
-}
-
-void Entity::setPos(const sf::Vector2f &pos)
-{
-    m_pos = pos;
-
-}
-void Entity::setPos(const float &x, const float &y)
-{
-    m_pos.x = x, m_pos.y = y;
 }
 
 const CollisionTable &Entity::collisionTable() const

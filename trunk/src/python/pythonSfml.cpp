@@ -1,4 +1,5 @@
 #include "PythonEmbedder.hpp"
+#include "../engine_2d/Entity.hpp"
 #include <SFML/Graphics.hpp>
 #include <boost/python/suite/indexing/vector_indexing_suite.hpp>
 #include <thor/Multimedia/ToString.hpp>
@@ -73,6 +74,26 @@ inline void RenderTarget_Draw(sf::RenderTarget &target,
     target.Draw(drawable);
 }
 
+/// Makes target.Draw(myEntity...) possible
+void sfTarget_Draw_Entity(sf::RenderTarget &target, const Entity &entity)
+{
+    target.Draw(entity);
+}
+void sfTarget_Draw_Entity2(sf::RenderTarget &target, const Entity &entity,
+    const sf::RenderStates &states)
+{
+    target.Draw(entity, states);
+}
+
+/// Return a sf::Transform's 4x4 matrix as a std::vector<float>
+std::vector<float> sfTransform_GetMatrix(const sf::Transform &transform)
+{
+    const float *matrix = transform.GetMatrix();
+    std::vector<float> matrix2;
+    matrix2.assign(matrix, matrix + 16);
+    return matrix2;
+}
+
 /// In sf.Key class, for test purpose
 unsigned int key_as_int(const sf::Keyboard::Key &key) { return key; }
 
@@ -109,6 +130,9 @@ void PythonEmbedder::exportSf()
     Vector2_wrapper<unsigned int>::wrap("Vector2u");
     Rect_wrapper<int>::wrap("IntRect");
     Rect_wrapper<float>::wrap("FloatRect");
+    def("Seconds", &sf::Seconds);
+    def("Milliseconds", &sf::Milliseconds);
+    def("Microseconds", &sf::Microseconds);
     class_<sf::Time>("Time", "Represents a time value")
         .def("AsSeconds", &sf::Time::AsSeconds)
         .def("AsMilliseconds", &sf::Time::AsMilliseconds)
@@ -188,11 +212,12 @@ void PythonEmbedder::exportSf()
     sf::Transform& (sf::Transform::*scale2)(float, float, float, float) = &sf::Transform::Scale;
     sf::Transform& (sf::Transform::*scale3)(const sf::Vector2f&) = &sf::Transform::Scale;
     sf::Transform& (sf::Transform::*scale4)(const sf::Vector2f&, const sf::Vector2f&) = &sf::Transform::Scale;
-    class_<sf::Transform>("Transform",
+    class_<std::vector<float> >("float_vec")
+        .def(vector_indexing_suite<std::vector<float> >())
+    ; class_<sf::Transform>("Transform",
             "Define a 3x3 transform matrix")
             .def(bp::init<float, float, float, float, float, float, float, float, float>())
-            /*.def("GetMatrix", &sf::Transform::GetMatrix,
-                return_internal_reference<>())*/
+            .def("GetMatrix", &sfTransform_GetMatrix)
             .def("GetInverse", &sf::Transform::GetInverse)
             .method_const(sf::Transform, TransformPoint, sf::Vector2f, float,
                 float)
@@ -209,11 +234,14 @@ void PythonEmbedder::exportSf()
             .def("Scale", scale2, return_internal_reference<>())
             .def("Scale", scale3, return_internal_reference<>())
             .def("Scale", scale4, return_internal_reference<>())
+            .def(self * sf::Transform())
+            .def(self *= sf::Transform())
+            .def(sf::Transform() * self)
     ; }
     class_<sf::Drawable, boost::noncopyable>("Drawable",
         "Abstract base class for objects that can be drawn to a render target",
         no_init)
-    ; class_<sf::Transformable, boost::noncopyable>("Transformable",
+    ; class_<sf::Transformable>("Transformable",
         "Decomposed transform defined by a position, a rotation and a scale")
         .method(sf::Transformable, SetPosition, void, float, float)
         .method(sf::Transformable, SetPosition, void, const sf::Vector2f&)
@@ -223,21 +251,21 @@ void PythonEmbedder::exportSf()
         .method(sf::Transformable, SetOrigin, void, const sf::Vector2f&)
         .method(sf::Transformable, SetOrigin, void, float, float)
         .def("GetPosition", &sf::Transformable::GetPosition,
-            return_value_policy<copy_const_reference>())
+            return_internal_reference<>())
         .def("GetRotation", &sf::Transformable::GetRotation)
         .def("GetScale", &sf::Transformable::GetScale,
-            return_value_policy<copy_const_reference>())
+            return_internal_reference<>())
         .def("GetOrigin", &sf::Transformable::GetOrigin,
-            return_value_policy<copy_const_reference>())
+            return_internal_reference<>())
         .method(sf::Transformable, Move, void, float, float)
         .method(sf::Transformable, Move, void, const sf::Vector2f&)
         .def("Rotate", &sf::Transformable::Rotate)
         .method(sf::Transformable, Scale, void, float, float)
         .method(sf::Transformable, Scale, void, const sf::Vector2f&)
         .def("GetTransform", &sf::Transformable::GetTransform,
-            return_value_policy<copy_const_reference>())
+            return_internal_reference<>())
         .def("GetInverseTransform", &sf::Transformable::GetInverseTransform,
-            return_value_policy<copy_const_reference>())
+            return_internal_reference<>())
     ; class_<sf::Image>("Image",
         "Class for loading, manipulating and saving images")
         .method(sf::Image, Create, void, unsigned int, unsigned int,
@@ -431,9 +459,9 @@ void PythonEmbedder::exportSf()
         .method(sf::RenderTarget, Clear, void, const sf::Color&)
         .def("SetView", &sf::RenderTarget::SetView)
         .def("GetView", &sf::RenderTarget::GetView,
-            return_value_policy<reference_existing_object>())
+            return_internal_reference<>())
         .def("GetDefaultView", &sf::RenderTarget::GetDefaultView,
-            return_value_policy<reference_existing_object>())
+            return_internal_reference<>())
         .def("GetViewport", &sf::RenderTarget::GetViewport)
         .method_const(sf::RenderTarget, ConvertCoords, sf::Vector2f,
             unsigned int, unsigned int)
@@ -441,6 +469,8 @@ void PythonEmbedder::exportSf()
             unsigned int, unsigned int, const sf::View&)
         .method(sf::RenderTarget, Draw, void, const sf::Drawable&, const sf::RenderStates&)
         .def("Draw", &RenderTarget_Draw) // only 1 argument (drawable)
+        .def("Draw", &sfTarget_Draw_Entity)
+        .def("Draw", &sfTarget_Draw_Entity2)
         .def("GetWidth", &sf::RenderTarget::GetWidth)
         .def("GetHeight", &sf::RenderTarget::GetHeight)
         .def("PushGLStates", &sf::RenderTarget::PushGLStates)

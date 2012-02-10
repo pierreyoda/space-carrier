@@ -120,7 +120,7 @@ struct StateWrap : State, wrapper<State>
     }
     bool default_init() { return this->State::init(); }
 
-    void update(const sf::Uint32 &elapsedTime)
+    void update(const sf::Time &elapsedTime)
     {
         this->get_override("update")(elapsedTime);
     }
@@ -136,21 +136,20 @@ struct StateWrap : State, wrapper<State>
 
 // TODO (Pierre-Yves#1#): [ENGINE] Entity::update : on delete Python won't delete the object immediately ; find a way to remove dependency
 /** \brief Python wrapper for Entity.
-Allow Python derived classes to override virtual functions such as Entity::render.
+Allow Python derived classes to override virtual functions such as Entity::Draw.
 */
 struct EntityWrap : Entity, wrapper<Entity>
 {
     EntityWrap(const std::string &id, const sf::Vector2f &pos = sf::Vector2f(),
-        const float &angle = 0.f, const float &speed = 0.f) :
-        Entity(id, pos, angle, speed)
+        const float &angle = 0.f) : Entity(id, pos, angle)
     { }
 
-    void render(sf::RenderTarget &target)
+    void Draw(sf::RenderTarget &target, sf::RenderStates states) const
     {
-        this->get_override("render")(boost::ref(target));
+        this->get_override("Draw")(boost::ref(target), states);
     }
 
-    bool update(const sf::Uint32 &elapsedTime)
+    bool update(const sf::Time &elapsedTime)
     {
         return this->get_override("update")(elapsedTime);
     }
@@ -158,15 +157,6 @@ struct EntityWrap : Entity, wrapper<Entity>
     sf::Vector2f getSize() const
     {
         return this->get_override("getSize")();
-    }
-
-    sf::Vector2f transformToLocal(const sf::Vector2f &point) const
-    {
-        return this->get_override("transformToLocal")(point);
-    }
-    sf::Vector2f transformToGlobal(const sf::Vector2f &point) const
-    {
-        return this->get_override("transformToGlobal")(point);
     }
 
     sf::IntRect getSubRect() const
@@ -178,6 +168,21 @@ struct EntityWrap : Entity, wrapper<Entity>
     sf::IntRect default_getSubRect() const
     {
         return this->Entity::getSubRect();
+    }
+
+    float angle() const
+    {
+        return Entity::GetRotation();
+    }
+
+    float setAngle(const float &angle)
+    {
+        Entity::SetRotation(angle);
+    }
+
+    const sf::Vector2f &pos() const
+    {
+        return Entity::GetPosition();
     }
 
     /** \brief Position setter. Accepts : sf::Vector2f ; (x,y) tuple where both x and y can be none.
@@ -192,17 +197,17 @@ struct EntityWrap : Entity, wrapper<Entity>
             if (!x_obj.is_none())
                 x = extract<float>(x_obj);
             if (len(value) == 1) // only x param
-                Entity::setPos(x, 0);
+                Entity::SetPosition(x, 0);
             else
             {
                 object y_obj(value[1]);
                 if (!y_obj.is_none())
                     y = extract<float>(y_obj);
-                Entity::setPos(x, y);
+                Entity::SetPosition(x, y);
             }
         }
         else if (extract<sf::Vector2f>(value).check())
-            m_pos = extract<sf::Vector2f>(value);
+            Entity::SetPosition(extract<sf::Vector2f>(value));
         else // incorrect type
         {
             std::string message = std::string("setting ") + m_id.c_str() +
@@ -252,21 +257,18 @@ void PythonEmbedder::exportOiwEngine()
         .def("update", pure_virtual(&State::update))
         .def("render", pure_virtual(&State::render))
         .def("handleEvent", pure_virtual(&State::handleEvent))
-    ; class_<EntityWrap, boost::noncopyable>("Entity",
+    ; class_<EntityWrap, bases<sf::Transformable, sf::Drawable>, boost::noncopyable>("Entity",
         "An abstract class representing a game entity",
         bp::init<const std::string&, optional<const sf::Vector2f&,
-            const float&, const float&> >())
-        .def("render", pure_virtual(&Entity::render))
+            const float& > >())
+        .def("Draw", pure_virtual(&Entity::Draw))
         .def("update", pure_virtual(&Entity::update))
         .def("getSize", pure_virtual(&Entity::getSize))
-        .def("transformToLocal", pure_virtual(&Entity::transformToLocal))
-        .def("transformToGlobal", pure_virtual(&Entity::transformToGlobal))
         .def("getSubRect", &Entity::getSubRect, &EntityWrap::default_getSubRect)
-        .add_property("pos", make_function(&Entity::pos,
+        .add_property("pos", make_function(&EntityWrap::pos,
             return_value_policy<copy_const_reference>()),
             (void(EntityWrap::*)(object))&EntityWrap::setPos)
-        .add_property("angle", &Entity::angle, &Entity::setAngle)
-        .add_property("speed", &Entity::speed, &Entity::setSpeed)
+        .add_property("angle", &EntityWrap::angle, &EntityWrap::setAngle)
         .add_property("id", make_function(&Entity::id,
             return_value_policy<copy_const_reference>()))
         .add_property("collision_table", make_function(&Entity::collisionTable,
@@ -276,7 +278,7 @@ void PythonEmbedder::exportOiwEngine()
         "Tool class to handle all game entities and their interactions")
         .def("addEntity", &EntityManager::addEntity,
             with_custodian_and_ward<1, 2>()) // keep entity as long as manager is alive
-        .def("renderAll", &EntityManager::renderAll)
+        .def("drawAll", &EntityManager::drawAll)
         .def("updateAll", &EntityManager::updateAll)
     ; class_<std::vector<bool> >("bool_vec")
         .def(vector_indexing_suite<std::vector<bool> >())

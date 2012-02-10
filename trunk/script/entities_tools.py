@@ -4,9 +4,9 @@
 from math import pi, degrees
 from OiwEngine import Entity, CollisionTable
 from decimal import Decimal
+from . import globals
 import sf, thor
 
-half_pi = pi /2
 
 def loadTexture(path, engine):
 	"""Load a texture by path, raise an exception if failed"""
@@ -21,10 +21,10 @@ def spriteSize(sprite):
 	bounds, scale = sprite.GetLocalBounds(), sprite.GetScale()
 	return sf.Vector2f(bounds.Width * scale.x, bounds.Height * scale.y)
 
-def originAtCenter(sprite):
-	"""Define sprite's origin at his center"""
-	size = spriteSize(sprite)
-	sprite.SetOrigin(size.x/2, size.y/2)
+def originAtCenter(entity):
+	"""Define entity's origin at his center"""
+	size = entity.getSize()
+	entity.SetOrigin(size.x/2, size.y/2)
 
 
 class SpriteBasedEntity (Entity):
@@ -33,42 +33,33 @@ class SpriteBasedEntity (Entity):
 	AABB_collision_boxes  = False	# Draw AABB collision boxes (used by pixel perfect test)
 	AABB_boxes_color = sf.Color(255, 175, 200)
 
-	def __init__(self, id, engine, pos = sf.Vector2f(), angle = half_pi):
+	def __init__(self, engine, id, pos = sf.Vector2f(), angle = 90):
 		Entity.__init__(self, id, pos, angle)
 		subclass = self.__class__ # provides access to subclass static variables
-		if subclass.texture == None:
+		if not isinstance(subclass.texture, sf.Texture):
 			subclass.texture = loadTexture(subclass.texture_path, engine)
 		self.sprite = sf.Sprite(subclass.texture)
-		originAtCenter(self.sprite)
-		self.updateAngle()
-		self.sprite.SetPosition(self.pos)
+		originAtCenter(self)
 		self.collision_table = CollisionTable(self.sprite.GetTexture().CopyToImage())
 
-	def updateAngle(self):
-		self.sprite.SetRotation(degrees(self.angle) - 90.0) # angle is whith the abscissa
-
-	def render(self, target):
+	def Draw(self, target, states):
 		if SpriteBasedEntity.AABB_collision_boxes:
 			rect = EntityCollisions.getAABB(self)
 			intrect = sf.FloatRect(rect.Left, rect.Top, rect.Width, rect.Height)
-			target.Draw(sf.Shape.Rectangle(intrect, SpriteBasedEntity.AABB_boxes_color))
-		target.Draw(self.sprite)
+			rect_shape = sf.RectangleShape(rect.Width, rect.Height)
+			rect_shape.SetPosition(rect.Left, rect.Top)
+			target.Draw(rect_shape)
+		states.Transform *= self.GetTransform()
+		target.Draw(self.sprite, states)
 
 	def getSize(self):
-		return self.sprite.GetSize()
-
-	def transformToLocal(self, point):
-		# return self.sprite.TransformToLocal(point)
-		raise NotImplementedError("SpriteBasedEntity.transformToLocal is not implemented yet")
-
-	def transformToGlobal(self, point):
-		return self.sprite.GetTransform().TransformPoint(point)
+		return spriteSize(self.sprite)
 
 
 class FpsCounter (Entity):
 	"""Prints FPS in top-left corner"""
 
-	refresh_time = 1000 # refresh every second
+	refresh_time = 1.0 # refresh every second
 	font_path	 = "data/Crimson-Roman.otf"
 	font		 = None
 
@@ -79,33 +70,36 @@ class FpsCounter (Entity):
 		if not font.valid():
 			raise RuntimeError("cannot load font '" + self.font_path + "'")
 		self.font = font.get()
-		self.fps = sf.Text("FPS : 0", self.font)
+		self.fps = sf.Text("FPS :  0", self.font)
 		self.fps.SetStyle(sf.Text.Bold)
 		self.clock = thor.StopWatch(True)
 
 	def update(self, elapsed_time):
 		fps = FpsCounter.compute_fps(elapsed_time)
-		if self.clock.GetElapsedTime().AsMilliseconds() < self.refresh_time:
+		if self.clock.GetElapsedTime().AsSeconds() < self.refresh_time:
 			return True
-		self.fps.SetString("FPS : {}".format(fps))
+		self.fps.SetString("FPS : {0:4.0f}".format(fps))
 		self.clock.Reset(True)
 
 		return True
 
-	def render(self, target):
+	def Draw(self, target, states):
 		"""Rendered in the default view"""
-		current_view = target.GetView()
 		target.SetView(target.GetDefaultView())
-		target.Draw(self.fps)
-		target.SetView(current_view)
+		states.Transform *= self.GetTransform()
+		target.Draw(self.fps, states)
+		target.SetView(globals.camera)
 
 	frame_counter, frame_time, fps = 0, 0, 0
 	@staticmethod
 	def compute_fps(elapsed_time):
 		"""Compute FPS from frametime. Works above 1000 fps."""
+		fps = 1 / (elapsed_time.AsSeconds()+0.000001)
+		return fps
 		FpsCounter.frame_counter += 1
-		FpsCounter.frame_time	 += elapsed_time
-		if FpsCounter.frame_time >= 1000:
+		FpsCounter.frame_time	 += elapsed_time.AsMilliseconds()
+		print(FpsCounter.frame_time)
+		if FpsCounter.frame_time >= 100:
 			FpsCounter.fps, FpsCounter.frame_counter = FpsCounter.frame_counter, 0
-			FpsCounter.frame_time -= 1000
+			FpsCounter.frame_time -= 100
 		return FpsCounter.fps
