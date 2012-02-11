@@ -3,7 +3,7 @@
 #include "Entity.hpp"
 
 Entity::Entity(const std::string &id, const sf::Vector2f &pos,
-    const float &angle) : sf::Drawable(), sf::Transformable(), m_id(id)
+    const float &angle) : sf::Transformable(), sf::Drawable(), m_id(id)
 {
     SetPosition(pos);
     SetRotation(angle);
@@ -29,16 +29,16 @@ const std::string &Entity::id() const
     return m_id;
 }
 
-sf::IntRect Entity::getSubRect() const
+sf::FloatRect Entity::getGlobalBounds() const
 {
-    return sf::IntRect(sf::Vector2i(), static_cast<sf::Vector2i>(getSize()));
+    return GetTransform().TransformRect(getLocalBounds());
 }
 
 bool Entity::isPixelPresent(const sf::Vector2f &pos) const
 {
-    sf::IntRect subrect = getSubRect();
-    int x = subrect.Left + static_cast<int>(pos.x),
-        y = subrect.Top + static_cast<int>(pos.y);
+    sf::FloatRect bounds(getLocalBounds());
+    int x = static_cast<int>(bounds.Left) + static_cast<int>(pos.x),
+        y = static_cast<int>(bounds.Top) + static_cast<int>(pos.y);
     if (x < 0 || y < 0 || y >= static_cast<int>(m_collisionTable.pixelsPresent.size())
         || x >= static_cast<int>(m_collisionTable.pixelsPresent[y].size()))
             return false;

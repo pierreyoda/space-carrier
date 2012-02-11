@@ -60,5 +60,5 @@ class SpaceShip (Entity):
 	def update(self, elapsed_time):
 		return True
 
-	def getSize(self): #TODO : take in acoount modules
-		return spriteSize(self.sprite_hull)
+	def getLocalBounds(self): #TODO : take in acoount modules
+		return self.sprite_hull.GetLocalBounds()

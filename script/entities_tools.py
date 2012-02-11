@@ -2,7 +2,7 @@
 """Entities-related class and functions"""
 
 from math import pi, degrees
-from OiwEngine import Entity, CollisionTable
+from OiwEngine import Entity, CollisionTable, EntityCollisions
 from decimal import Decimal
 from . import globals
 import sf, thor
@@ -17,21 +17,21 @@ def loadTexture(path, engine):
 	return texture.get()
 
 def spriteSize(sprite):
-	"""Compute a sprite's size, taking in account its scale"""
+	"""Compute an entity's size, taking in account its scale"""
 	bounds, scale = sprite.GetLocalBounds(), sprite.GetScale()
 	return sf.Vector2f(bounds.Width * scale.x, bounds.Height * scale.y)
 
 def originAtCenter(entity):
 	"""Define entity's origin at his center"""
-	size = entity.getSize()
-	entity.SetOrigin(size.x/2, size.y/2)
+	bounds = entity.getLocalBounds()
+	entity.SetOrigin(bounds.Width/2, bounds.Height/2)
 
 
 class SpriteBasedEntity (Entity):
 	"""Base class for sprite-based entities"""
 
-	AABB_collision_boxes  = False	# Draw AABB collision boxes (used by pixel perfect test)
-	AABB_boxes_color = sf.Color(255, 175, 200)
+	show_collision_boxes  = True	# Draw collision boxes (used by pixel perfect test)
+	collision_boxes_color = sf.Color(255, 175, 200, 150)
 
 	def __init__(self, engine, id, pos = sf.Vector2f(), angle = 90):
 		Entity.__init__(self, id, pos, angle)
@@ -41,19 +41,23 @@ class SpriteBasedEntity (Entity):
 		self.sprite = sf.Sprite(subclass.texture)
 		originAtCenter(self)
 		self.collision_table = CollisionTable(self.sprite.GetTexture().CopyToImage())
+		if SpriteBasedEntity.show_collision_boxes:
+			self.collision_rect = sf.RectangleShape()
+			self.collision_rect.SetFillColor(SpriteBasedEntity.collision_boxes_color)
+		else: # avoid unnecessary memory consumption
+			self.collision_rect = None
 
 	def Draw(self, target, states):
-		if SpriteBasedEntity.AABB_collision_boxes:
-			rect = EntityCollisions.getAABB(self)
-			intrect = sf.FloatRect(rect.Left, rect.Top, rect.Width, rect.Height)
-			rect_shape = sf.RectangleShape(rect.Width, rect.Height)
-			rect_shape.SetPosition(rect.Left, rect.Top)
-			target.Draw(rect_shape)
+		if self.collision_rect != None:
+			rect = self.getGlobalBounds()
+			self.collision_rect.SetSize(sf.Vector2f(rect.Width, rect.Height))
+			self.collision_rect.SetPosition(rect.Left, rect.Top)
+			target.Draw(self.collision_rect)
 		states.Transform *= self.GetTransform()
 		target.Draw(self.sprite, states)
 
-	def getSize(self):
-		return spriteSize(self.sprite)
+	def getLocalBounds(self):
+		return self.sprite.GetLocalBounds()
 
 
 class FpsCounter (Entity):
@@ -70,15 +74,15 @@ class FpsCounter (Entity):
 		if not font.valid():
 			raise RuntimeError("cannot load font '" + self.font_path + "'")
 		self.font = font.get()
-		self.fps = sf.Text("FPS :  0", self.font)
-		self.fps.SetStyle(sf.Text.Bold)
+		self.text = sf.Text("FPS :  0", self.font)
+		self.text.SetStyle(sf.Text.Bold)
 		self.clock = thor.StopWatch(True)
 
 	def update(self, elapsed_time):
 		fps = FpsCounter.compute_fps(elapsed_time)
 		if self.clock.GetElapsedTime().AsSeconds() < self.refresh_time:
 			return True
-		self.fps.SetString("FPS : {0:4.0f}".format(fps))
+		self.text.SetString("FPS : {0:4.0f}".format(fps))
 		self.clock.Reset(True)
 
 		return True
@@ -87,7 +91,7 @@ class FpsCounter (Entity):
 		"""Rendered in the default view"""
 		target.SetView(target.GetDefaultView())
 		states.Transform *= self.GetTransform()
-		target.Draw(self.fps, states)
+		target.Draw(self.text, states)
 		target.SetView(globals.camera)
 
 	frame_counter, frame_time, fps = 0, 0, 0
@@ -103,3 +107,12 @@ class FpsCounter (Entity):
 			FpsCounter.fps, FpsCounter.frame_counter = FpsCounter.frame_counter, 0
 			FpsCounter.frame_time -= 100
 		return FpsCounter.fps
+
+	def getSubRect(self):
+		return self.text.GetTextureRect()
+
+	def getLocalBounds(self):
+		return self.text.GetLocalBounds()
+
+	def getGlobalBounds(self):
+		return self.text.GetGlobalBounds()

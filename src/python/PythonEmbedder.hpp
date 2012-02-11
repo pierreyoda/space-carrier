@@ -4,7 +4,6 @@
 #include <boost/python.hpp>
 #include <boost/filesystem.hpp>
 
-// TODO (Pierre-Yves#1#): [PYTHON EXPORT] split exportSpaceCarrier into exportEngine (common to other projects) and exportGame (specific)
 /** \brief A class that handles the Python interpretor and provides functions to deal with.
 *
 */

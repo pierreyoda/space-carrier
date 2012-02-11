@@ -54,24 +54,32 @@ class Entity : public sf::Transformable, public sf::Drawable
         */
         virtual bool update(const sf::Time&) = 0;
 
-        /** \brief Get the entity size.
+        /** \brief Get the local bounding rectangle of the entity.
+        * The returned rectangle is in local coordinates, which means that it
+        * ignores the transformations (translation, rotation, scale, ...) that are
+        * applied to the entity. In other words, this function returns the bounds
+        * of the entity in the entity's coordinate system.
         *
-        * \return Entity's size.
+        * Important : must take in account the drawing subrect (for example : sf::Sprite's texture rect).
+        *
+        * \return Local bounding rectangle of the entity.
         *
         */
-        virtual sf::Vector2f getSize() const = 0;
+        virtual sf::FloatRect getLocalBounds() const = 0;
 
-        /** \brief Get the entity's drawing subrect if existing. By default : compute with entity's size.
+        /** \brief Get the global bounding rectangle of the entity.
+        * The returned rectangle is in global coordinates, which means that
+        * it takes in account the transformations (translation, rotation,
+        * scale, ...) that are applied to the entity. In other words,
+        * this function returns the bounds of the sprite in the global 2D
+        *world's coordinate system.
         *
-        * \return Entity's subrect.
-        *
+        * \return Global bounding rectangle of the entity
         */
-        sf::IntRect getSubRect() const;
+        sf::FloatRect getGlobalBounds() const;
 
         /** \brief Compute if a pixel present here, using the internal collision table.
         *Will not work if image flipped!
-        *
-        *Warning : no out-of-range check is made.
         *
         * \param pos Pixel position (in local coordinates).
         *
@@ -79,10 +87,9 @@ class Entity : public sf::Transformable, public sf::Drawable
         *
         */
         bool isPixelPresent(const sf::Vector2f &pos) const;
+
         /** \brief Compute if a pixel present here, using the internal collision table.
         *Will not work if image flipped!
-        *
-        *Warning : no out-of-range check is made.
         *
         * \param x Pixel X position (in local coordinates).
         * \param y Pixel Y position (in local coordinates).

@@ -31,6 +31,26 @@ def take_screenshot(render_window, folder = "screens/"):
 		os.mkdir(folder) # create /screens not existing yet
 	render_window.Capture().SaveToFile(folder + filename)
 
+from script.entities_tools import SpriteBasedEntity
+
+class TestEntity (SpriteBasedEntity):
+	texture = None
+	texture_path = "data/fighter_hull.png"
+
+	def __init__(self, engine, id):
+		SpriteBasedEntity.__init__(self, engine, id)
+		self.Move(600, 300)
+		self.angle = 50
+		self.SetScale(0.3, 0.3)
+		self.sprite.SetColor(sf.Color(200, 100, 150))
+
+	def update(self, elapsed_time):
+		if globals.action_map.IsActive("player_rotate_left"):
+			self.angle -= elapsed_time.AsSeconds() * 250
+		elif globals.action_map.IsActive("player_rotate_right"):
+			self.angle += elapsed_time.AsSeconds() * 250
+		return True
+
 
 class TestState (State):
 	"""Test state"""
@@ -62,6 +82,7 @@ class TestState (State):
 		# Entities
 		self.entities_mgr.addEntity(Fighter(self.engine, "fighter"))
 		self.entities_mgr.addEntity(FpsCounter(self.engine))
+		self.entities_mgr.addEntity(TestEntity(self.engine, "test"))
 		self.engine.getRenderWindow().SetFramerateLimit(0)
 		self.engine.getRenderWindow().EnableVerticalSync(False)
 
