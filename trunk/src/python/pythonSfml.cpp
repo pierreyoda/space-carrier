@@ -236,7 +236,7 @@ void PythonEmbedder::exportSf()
             .def("Scale", scale4, return_internal_reference<>())
             .def(self * sf::Transform())
             .def(self *= sf::Transform())
-            .def(sf::Transform() * self)
+            .def(self * sf::Vector2f())
     ; }
     class_<sf::Drawable, boost::noncopyable>("Drawable",
         "Abstract base class for objects that can be drawn to a render target",

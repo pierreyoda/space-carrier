@@ -159,15 +159,9 @@ struct EntityWrap : Entity, wrapper<Entity>
         return this->get_override("getSize")();
     }
 
-    sf::IntRect getSubRect() const
+    sf::FloatRect getLocalBounds() const
     {
-        if (override getSubRect_ = this->get_override("getSubRect"))
-            return getSubRect_();
-        return Entity::getSubRect();
-    }
-    sf::IntRect default_getSubRect() const
-    {
-        return this->Entity::getSubRect();
+        return this->get_override("getLocalBounds")();
     }
 
     float angle() const
@@ -175,7 +169,7 @@ struct EntityWrap : Entity, wrapper<Entity>
         return Entity::GetRotation();
     }
 
-    float setAngle(const float &angle)
+    void setAngle(const float &angle)
     {
         Entity::SetRotation(angle);
     }
@@ -263,8 +257,8 @@ void PythonEmbedder::exportOiwEngine()
             const float& > >())
         .def("Draw", pure_virtual(&Entity::Draw))
         .def("update", pure_virtual(&Entity::update))
-        .def("getSize", pure_virtual(&Entity::getSize))
-        .def("getSubRect", &Entity::getSubRect, &EntityWrap::default_getSubRect)
+        .def("getLocalBounds", pure_virtual(&Entity::getLocalBounds))
+        .def("getGlobalBounds", &Entity::getGlobalBounds)
         .add_property("pos", make_function(&EntityWrap::pos,
             return_value_policy<copy_const_reference>()),
             (void(EntityWrap::*)(object))&EntityWrap::setPos)
