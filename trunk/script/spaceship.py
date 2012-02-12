@@ -3,13 +3,14 @@
 
 import sf
 from OiwEngine import Entity
-from .entities_tools import loadTexture, spriteSize, originAtCenter
+from .entities_tools import loadTexture, originAtCenter
 from .module import *
 from . import globals
 from math import degrees, cos, sin
 
 def id_from_spaceship_class(spaceship):
 	return spaceship.class_name + str(spaceship.count)
+
 
 class SpaceShip (Entity):
 	""" Base class for all spaceships.
@@ -23,41 +24,31 @@ class SpaceShip (Entity):
 		Entity.__init__(self, id if id is not None else id_from_spaceship_class(self.__class__))
 		subclass = self.__class__
 		subclass.count += 1
-		if "hull" not in self.textures.keys() or self.textures["hull"] == None:
-			subclass.textures["hull"] = loadTexture(subclass.textures_paths["hull"], engine)
-		self.sprite_hull = sf.Sprite(subclass.textures["hull"])
+		# Hull
+		if "main" not in self.textures.keys() or self.textures["main"] == None:
+			subclass.textures["main"] = loadTexture(subclass.textures_paths["main"], engine)
+		self.sprite_hull = sf.Sprite(subclass.textures["main"])
 		originAtCenter(self)
-		self.modules = { }
 		#self.collision_table = CollisionTable(self.sprite.GetTexture().CopyToImage())
-		self.init_modules(engine)
 
-	def init_modules(self, engine):
-		""" Init spaceship modules according to these static class variables :
-		In SpaceShip child : textures_paths = {'hull':..., 'modules':..., [ + optionnal : other images] }"""
-		modules_infos = self.__class__.modules_infos
-		if len(modules_infos) == 0:
-			return # no defined modules
-		# Instanciate all modules
-		self.modules = { }
-		for name, info in modules_infos.items():
-			if info.texture_path == None:
-				info.texture_path = self.textures_paths["modules"]
-			self.modules[name] = Module("{}-{}".format(self.id, name), engine,
-				modules_infos[name])
+		# Modules slots and modules
+		self.modules_slots = { }
+		self.initialize_slots(engine)
+		self.mount_default_modules(engine)
+
+	def generate_equipment_id(self, name):
+		"""Generate an equipment ID (module or module slot)"""
+		return "{}-{}".format(self.id, name)
 
 	def Draw(self, target, states):
 		states.Transform *= self.GetTransform()
-		if globals.debug:
-			target.Draw(self.sprite_hull, states)
-			for module in self.modules.values():
-					target.Draw(module, states)
-		else:
-			for module in self.modules.values():
-				if module.infos.draw:
-					target.Draw(module, states)
-			target.Draw(self.sprite_hull, states)
+		target.Draw(self.sprite_hull, states)
+		for slot in self.modules_slots.values():
+			target.Draw(slot, states)
 
 	def update(self, elapsed_time):
+		for slot in self.modules_slots.values():
+			slot.update(elapsed_time)
 		return True
 
 	def getLocalBounds(self): #TODO : take in acoount modules
