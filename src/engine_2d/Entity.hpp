@@ -104,7 +104,7 @@ class Entity : public sf::Transformable, public sf::Drawable
         *
         * \param id Identifier (a string).
         * \param pos Position of the entity.
-        * \param angle Angle with the abscissa (in degrees).
+        * \param angle Angle with the ordinate (in degrees).
         *
         */
         Entity(const std::string &id, const sf::Vector2f &pos = sf::Vector2f(),

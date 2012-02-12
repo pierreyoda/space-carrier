@@ -16,9 +16,9 @@ def loadTexture(path, engine):
 		raise RuntimeError("cannot load texture '" + path + "'")
 	return texture.get()
 
-def spriteSize(sprite):
+def entitySize(entity):
 	"""Compute an entity's size, taking in account its scale"""
-	bounds, scale = sprite.GetLocalBounds(), sprite.GetScale()
+	bounds, scale = entity.getLocalBounds(), entity.GetScale()
 	return sf.Vector2f(bounds.Width * scale.x, bounds.Height * scale.y)
 
 def originAtCenter(entity):
@@ -30,7 +30,7 @@ def originAtCenter(entity):
 class SpriteBasedEntity (Entity):
 	"""Base class for sprite-based entities"""
 
-	show_collision_boxes  = True	# Draw collision boxes (used by pixel perfect test)
+	show_collision_boxes  = False	# Draw collision boxes (used by pixel perfect test)
 	collision_boxes_color = sf.Color(255, 175, 200, 150)
 
 	def __init__(self, engine, id, pos = sf.Vector2f(), angle = 90):
@@ -39,7 +39,6 @@ class SpriteBasedEntity (Entity):
 		if not isinstance(subclass.texture, sf.Texture):
 			subclass.texture = loadTexture(subclass.texture_path, engine)
 		self.sprite = sf.Sprite(subclass.texture)
-		originAtCenter(self)
 		self.collision_table = CollisionTable(self.sprite.GetTexture().CopyToImage())
 		if SpriteBasedEntity.show_collision_boxes:
 			self.collision_rect = sf.RectangleShape()
