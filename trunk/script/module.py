@@ -14,6 +14,7 @@ class Module (SpriteBasedEntity):
 		- a texture path (static)
 		- an ID (must be unique)
 		- a dictionary of internal module properties (if None : undefined)
+			"turret_based" = if True, can be mounted on a ModuleTurretSlot
 			"type"	 = see Module.types enum
 			"mark"   = determines compatibility with module slots
 			"hp"     = hitpoints
@@ -31,8 +32,8 @@ class Module (SpriteBasedEntity):
 		SpriteBasedEntity.__init__(self, engine, id)
 		originAtCenter(self)
 		self.angle = 0
-		self.properties = {"type":Module.types.UNDEFINED, "mark":1, "hp":None,
-			"cost":0, "weight":0}
+		self.properties = {"turret_based":False, "type":Module.types.UNDEFINED,
+			"mark":1, "hp":None, "cost":0, "weight":0}
 		self.affects = {"power":0}
 
 	def update(self, elapsed_time):

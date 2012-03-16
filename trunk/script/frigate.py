@@ -5,6 +5,7 @@ from sf import IntRect
 from . import globals
 from .spaceship import SpaceShip
 from .module_slot import ModuleSlot
+from .module_turret_slot import ModuleTurretSlot
 from .modules.laser_turret_mk2 import *
 from .modules.power_generator_mk3 import *
 from .entities_tools import originAtCenter
@@ -26,9 +27,9 @@ class Frigate (SpaceShip):
 		self.modules_slots["multipurpose_rear"] = ModuleSlot(
 			self.generate_equipment_id("slot_multipurpose_rear"),
 			engine, IntRect(17, 319, 48, 46), ModuleSlot.types.MULTIPURPOSE, 3)
-		self.modules_slots["multipurpose_front"] = ModuleSlot(
+		self.modules_slots["multipurpose_front"] = ModuleTurretSlot(
 			self.generate_equipment_id("multipurpose_front"),
-			engine, IntRect(15, 69, 50, 48), ModuleSlot.types.MULTIPURPOSE, 3)
+			engine, IntRect(15, 69, 50, 48), 3, (-40, 220))
 
 	def mount_default_modules(self, engine):
 		"""Mount all the default modules"""
