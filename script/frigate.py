@@ -5,6 +5,7 @@ from sf import IntRect
 from . import globals
 from .spaceship import SpaceShip
 from .module_slot import ModuleSlot
+from .modules.laser_turret_mk2 import *
 from .modules.power_generator_mk3 import *
 from .entities_tools import originAtCenter
 
@@ -24,14 +25,19 @@ class Frigate (SpaceShip):
 		"""Define all the Frigate slots"""
 		self.modules_slots["multipurpose_rear"] = ModuleSlot(
 			self.generate_equipment_id("slot_multipurpose_rear"),
-			engine, IntRect(8, 159, 24, 24), ModuleSlot.types.MULTIPURPOSE, 3)
-		originAtCenter(self.modules_slots["multipurpose_rear"])
+			engine, IntRect(17, 319, 48, 46), ModuleSlot.types.MULTIPURPOSE, 3)
+		self.modules_slots["multipurpose_front"] = ModuleSlot(
+			self.generate_equipment_id("multipurpose_front"),
+			engine, IntRect(15, 69, 50, 48), ModuleSlot.types.MULTIPURPOSE, 3)
 
 	def mount_default_modules(self, engine):
 		"""Mount all the default modules"""
 		self.modules_slots["multipurpose_rear"].mount_module(
 			ModulePowerGeneratorMK3(engine,
 				self.generate_equipment_id("power_generator")))
+		self.modules_slots["multipurpose_front"].mount_module(
+			ModuleLaserTurretMK2(engine,
+				self.generate_equipment_id("laser_turret")))
 
 	def update(self, elapsed_time):
 		if not SpaceShip.update(self, elapsed_time):

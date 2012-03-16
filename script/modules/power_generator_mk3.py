@@ -4,7 +4,7 @@
 from ..module import Module
 
 class ModulePowerGeneratorMK3 (Module):
-	"""Power Generator, mark III."""
+	"""Power Generator, mark III"""
 
 	module_name  = "PowerGeneratorMK3"
 	texture 	 = None
@@ -12,8 +12,8 @@ class ModulePowerGeneratorMK3 (Module):
 
 	def __init__(self, engine, id):
 		Module.__init__(self, engine, id)
-		self.properties["hp"]	= 1000
+		self.properties["type"]	= Module.types.GENERATOR
 		self.properties["mark"] = 3
+		self.properties["hp"]	= 1000
 		self.properties["cost"] = 250000
 		self.affects["power"]	= 25 # +25 POWER
-		self.angle = 0
