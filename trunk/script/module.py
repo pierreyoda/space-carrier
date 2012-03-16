@@ -30,6 +30,7 @@ class Module (SpriteBasedEntity):
 	def __init__(self, engine, id):
 		SpriteBasedEntity.__init__(self, engine, id)
 		originAtCenter(self)
+		self.angle = 0
 		self.properties = {"type":Module.types.UNDEFINED, "mark":1, "hp":None,
 			"cost":0, "weight":0}
 		self.affects = {"power":0}

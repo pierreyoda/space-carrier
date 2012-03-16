@@ -154,11 +154,6 @@ struct EntityWrap : Entity, wrapper<Entity>
         return this->get_override("update")(elapsedTime);
     }
 
-    sf::Vector2f getSize() const
-    {
-        return this->get_override("getSize")();
-    }
-
     sf::FloatRect getLocalBounds() const
     {
         return this->get_override("getLocalBounds")();
