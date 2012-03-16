@@ -1,12 +1,11 @@
 ﻿# -*-coding:Utf-8 -*
-"""Spaceship's module slotclass"""
+"""Spaceship's module slot class"""
 
 from sf import Vector2f, FloatRect
 from OiwEngine import Entity
 from .entities_tools import originAtCenter
 from .python_tools import enum
 from .module import Module, ModuleEmpty
-from sf import RectangleShape
 
 
 class ModuleSlot (Entity):
@@ -15,7 +14,7 @@ class ModuleSlot (Entity):
 		- a sf.IntRect (-> relative position and size)
 		- a type
 			> multipurpose : anything but engine modules
-			> weapon	   : only weapons modules
+			> turret	   : only turret-based (weapons) modules
 			> generator	   : only generator (shield or power) modules
 			> engine	   : only engine modules
 		- a mark (advancement level, determines which module you can mount)
@@ -23,7 +22,7 @@ class ModuleSlot (Entity):
 			the derived classes (joints...).
 	"""
 
-	types = enum("MULTIPURPOSE", "WEAPON", "GENERATOR", "ENGINE")
+	types = enum("MULTIPURPOSE", "TURRET", "GENERATOR", "ENGINE")
 
 	def __init__(self, id, engine, rect, type, mark, origin_at_center=True):
 		Entity.__init__(self, id)
@@ -53,9 +52,9 @@ class ModuleSlot (Entity):
 		if (self.type == ModuleSlot.types.MULTIPURPOSE and
 			module.properties["type"] != Module.types.ENGINE):
 			return True
-		# weapon
-		if (self.type == ModuleSlot.types.WEAPON and
-			module.properties["type"] == Module.types.WEAPON):
+		# turret
+		if (self.type == ModuleSlot.types.TURRET and
+			module.properties["turret_based"]):
 			return True
 		# power or shield generator
 		elif (self.type == ModuleSlot.types.GENERATOR and

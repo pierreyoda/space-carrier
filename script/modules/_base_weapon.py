@@ -9,3 +9,4 @@ class ModuleBaseWeapon (Module):
 	def __init__(self, engine, id):
 		Module.__init__(self, engine, id)
 		self.properties["type"] = Module.types.WEAPON
+		self.properties["turret_based"] = True
