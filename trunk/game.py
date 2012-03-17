@@ -121,7 +121,7 @@ class TestState (State):
 
 def SpaceCarrier_initScript(engine):
 	"""
-	Script main entry
+		Script main entry
 	"""
 	print("Initializing game script...")
 	game_mode = TestState(engine)
@@ -136,7 +136,9 @@ def SpaceCarrier_initScript(engine):
 		print(".")
 		return False
 	print("Test State was succesfully initialized!")
-	engine.addState(game_mode, "Test", True)
+	engine.getRenderWindow().SetSize(globals.screen_size[0],
+		globals.screen_size[1])
 	engine.getRenderWindow().EnableKeyRepeat(False)
+	engine.addState(game_mode, "Test", True)
 
 	return True
