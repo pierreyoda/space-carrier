@@ -38,8 +38,9 @@ class ModuleSlot (Entity):
 		if not self.is_module_compatible(module):
 			print("Cannot mount module {0} in slot of ID : {1}".format(
 				module.module_name, self.id))
-			return
+			return False
 		self.mounted_module = module
+		return True
 
 	def is_empty(self):
 		return isinstance(self.mounted_module, ModuleEmpty)
