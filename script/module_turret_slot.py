@@ -10,6 +10,7 @@ class ModuleTurretSlot (ModuleSlot):
 	""" Spaceship's specific attachment able to mount turrets modules (weapons).
 		Adds angle constraints (in degrees).
 		Important note : angle of 0 ==> aligned with the spaceship
+		 (conversion from normal angle : +90).
 	"""
 
 	def __init__(self, id, engine, rect, mark, angles, origin_at_center=True):
@@ -17,20 +18,46 @@ class ModuleTurretSlot (ModuleSlot):
 		ModuleSlot.__init__(self, id, engine, rect, ModuleSlot.types.TURRET,
 			mark, origin_at_center)
 		self.angles = angles
+		self.target_angle = 0
+		self.rotated_angle = 0
 		self.turret_center = Vector2f(rect.Left+rect.Width/2,
 			rect.Top+rect.Height/2)
+
+	# TODO : better left/right rotation decision
+	def update(self, elapsed_time):
+		if not ModuleSlot.update(self, elapsed_time):
+			return False
+		# turret rotation
+		current_angle = self.mounted_module.angle
+		diff = (current_angle - self.target_angle) % 360
+		if diff < 1:   # useless
+			return True
+		# Rotate left
+		if diff < 180:
+			delta = -self.rotation_speed * elapsed_time.AsSeconds()
+			if self.rotated_angle+delta > self.angles[0]:	# limit check
+				self.mounted_module.Rotate(delta)
+				self.rotated_angle += delta
+		# Rotate right
+		else:
+			delta = self.rotation_speed * elapsed_time.AsSeconds()
+			if self.rotated_angle+delta < self.angles[1]:	# limit check
+				self.mounted_module.Rotate(delta)
+				self.rotated_angle += delta
+		return True
 
 	def mount_module(self, module):
 		if not ModuleSlot.mount_module(self, module):
 			return False
 		# "center" turret
-		module.angle = (self.angles[1] - self.angles[0]) / 2
+		module.angle = (self.angles[0] + self.angles[1]) / 2
+		self.target_angle = module.angle
+		self.rotation_speed = module.properties["rotation_speed"]
 
-	def align_on(self, pos):
+	def align_on(self, direction):
 		"""Point mounted turret module on the given position,
 			if allowed by angle constraints."""
-		# -90 cause angle is with the spaceship
-		# TODO : - rotating turret (not an immediate alignment)
-		#		 - angle constraints
-		#        - handle very near positions (otherwise weird angles)
-		self.mounted_module.angle = degrees(atan2(pos.y, pos.x))+90
+		# +90 cause angle is with the spaceship
+		if abs(direction.x) < 15.0 and abs(direction.y) < 15.0:
+			return # very near directions : ignore, otherwise provokes weird angles
+		self.target_angle = (degrees(atan2(direction.y, direction.x))+90)
