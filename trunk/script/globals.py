@@ -8,7 +8,7 @@ debug = False
 action_map = None
 
 # Game
-player_refresh_turrets_angle = 0.1 # (in seconds)
+player_refresh_turrets_target_angle = 0.5 # (in seconds)
 
 # Scren size and camera
 camera = None

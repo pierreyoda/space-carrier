@@ -31,7 +31,7 @@ class Frigate (SpaceShip):
 			engine, IntRect(17, 319, 48, 46), ModuleSlot.types.MULTIPURPOSE, 3)
 		self.modules_slots["multipurpose_front"] = ModuleTurretSlot(
 			self.generate_equipment_id("multipurpose_front"),
-			engine, IntRect(15, 69, 50, 48), 3, (130, 130))
+			engine, IntRect(15, 69, 50, 48), 3, (-130, 130))
 
 	def mount_default_modules(self, engine):
 		"""Mount all the default modules"""
@@ -55,7 +55,7 @@ class Frigate (SpaceShip):
 
 		# turrets angle refresh (point on mouse)
 		self.turrets_angle_refresh_time += elapsed_seconds
-		if self.turrets_angle_refresh_time >= globals.player_refresh_turrets_angle:
+		if self.turrets_angle_refresh_time >= globals.player_refresh_turrets_target_angle:
 			self.turrets_angle_refresh_time = 0
 			mouse_pos = Mouse.GetPosition(self.engine.getRenderWindow())
 			if globals.in_screen(mouse_pos):
