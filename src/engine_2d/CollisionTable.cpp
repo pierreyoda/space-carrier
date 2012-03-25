@@ -12,11 +12,11 @@ CollisionTable::CollisionTable() : pixelsPresent()
 CollisionTable::CollisionTable(const sf::Image &image,
     const sf::Uint8 &alphaLimit) : pixelsPresent()
 {
-    for (unsigned int i = 0; i < image.GetHeight(); i++)
+    for (unsigned int i = 0; i < image.getHeight(); i++)
     {
         pixelsPresent.push_back(std::vector<bool>());
-        for (unsigned int j = 0; j < image.GetWidth(); j++)
-            pixelsPresent[i].push_back(image.GetPixel(j, i).a > alphaLimit);
+        for (unsigned int j = 0; j < image.getWidth(); j++)
+            pixelsPresent[i].push_back(image.getPixel(j, i).a > alphaLimit);
     }
 }
 

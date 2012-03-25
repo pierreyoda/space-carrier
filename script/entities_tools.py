@@ -10,7 +10,7 @@ import sf, thor
 
 def loadTexture(path, engine):
 	"""Load a texture by path, raise an exception if failed"""
-	texture_key = thor.Resources.TextureKey.FromFile(path)
+	texture_key = thor.Resources.TextureKey.fromFile(path)
 	texture		= engine.loadTexture(texture_key)
 	if not texture.valid():
 		raise RuntimeError("cannot load texture '" + path + "'")
@@ -18,13 +18,13 @@ def loadTexture(path, engine):
 
 def entitySize(entity):
 	"""Compute an entity's size, taking in account its scale"""
-	bounds, scale = entity.getLocalBounds(), entity.GetScale()
-	return sf.Vector2f(bounds.Width * scale.x, bounds.Height * scale.y)
+	bounds, scale = entity.getLocalBounds(), entity.getScale()
+	return sf.Vector2f(bounds.width * scale.x, bounds.height * scale.y)
 
 def originAtCenter(entity):
 	"""Define entity's origin at his center"""
 	bounds = entity.getLocalBounds()
-	entity.SetOrigin(bounds.Width/2, bounds.Height/2)
+	entity.setOrigin(bounds.width/2, bounds.height/2)
 
 
 class SpriteBasedEntity (Entity):
@@ -39,24 +39,24 @@ class SpriteBasedEntity (Entity):
 		if not isinstance(subclass.texture, sf.Texture):
 			subclass.texture = loadTexture(subclass.texture_path, engine)
 		self.sprite = sf.Sprite(subclass.texture)
-		self.collision_table = CollisionTable(self.sprite.GetTexture().CopyToImage())
+		self.collision_table = CollisionTable(self.sprite.getTexture().copyToImage())
 		if SpriteBasedEntity.show_collision_boxes:
 			self.collision_rect = sf.RectangleShape()
-			self.collision_rect.SetFillColor(SpriteBasedEntity.collision_boxes_color)
+			self.collision_rect.setFillColor(SpriteBasedEntity.collision_boxes_color)
 		else: # avoid unnecessary memory consumption
 			self.collision_rect = None
 
-	def Draw(self, target, states):
+	def draw(self, target, states):
 		if self.collision_rect != None:
 			rect = self.getGlobalBounds()
-			self.collision_rect.SetSize(sf.Vector2f(rect.Width, rect.Height))
-			self.collision_rect.SetPosition(rect.Left, rect.Top)
-			target.Draw(self.collision_rect)
-		states.Transform *= self.GetTransform()
-		target.Draw(self.sprite, states)
+			self.collision_rect.setSize(sf.Vector2f(rect.width, rect.height))
+			self.collision_rect.setPosition(rect.left, rect.top)
+			target.draw(self.collision_rect)
+		states.transform *= self.getTransform()
+		target.draw(self.sprite, states)
 
 	def getLocalBounds(self):
-		return self.sprite.GetLocalBounds()
+		return self.sprite.getLocalBounds()
 
 
 class FpsCounter (Entity):
@@ -68,39 +68,39 @@ class FpsCounter (Entity):
 
 	def __init__(self, engine):
 		Entity.__init__(self, "FpsCounter")
-		font_key = thor.Resources.FontKey.FromFile(self.font_path)
+		font_key = thor.Resources.FontKey.fromFile(self.font_path)
 		font = engine.loadFont(font_key)
 		if not font.valid():
 			raise RuntimeError("cannot load font '" + self.font_path + "'")
 		self.font = font.get()
 		self.text = sf.Text("FPS :  0", self.font)
-		self.text.SetStyle(sf.Text.Bold)
+		self.text.setStyle(sf.Text.Bold)
 		self.clock = thor.StopWatch(True)
 
 	def update(self, elapsed_time):
 		fps = FpsCounter.compute_fps(elapsed_time)
-		if self.clock.GetElapsedTime().AsSeconds() < self.refresh_time:
+		if self.clock.getElapsedTime().asSeconds() < self.refresh_time:
 			return True
-		self.text.SetString("FPS : {0:4.0f}".format(fps))
-		self.clock.Reset(True)
+		self.text.setString("FPS : {0:4.0f}".format(fps))
+		self.clock.reset(True)
 
 		return True
 
-	def Draw(self, target, states):
+	def draw(self, target, states):
 		"""Rendered in the default view"""
-		target.SetView(target.GetDefaultView())
-		states.Transform *= self.GetTransform()
-		target.Draw(self.text, states)
-		target.SetView(globals.camera)
+		target.setView(target.getDefaultView())
+		states.transform *= self.getTransform()
+		target.draw(self.text, states)
+		target.setView(globals.camera)
 
 	frame_counter, frame_time, fps = 0, 0, 0
 	@staticmethod
 	def compute_fps(elapsed_time):
 		"""Compute FPS from frametime. Works above 1000 fps."""
-		fps = 1 / (elapsed_time.AsSeconds()+0.000001)
+		fps = 1 / (elapsed_time.asSeconds()+0.000001)
 		return fps
 		FpsCounter.frame_counter += 1
-		FpsCounter.frame_time	 += elapsed_time.AsMilliseconds()
+		FpsCounter.frame_time	 += elapsed_time.asMilliseconds()
 		print(FpsCounter.frame_time)
 		if FpsCounter.frame_time >= 100:
 			FpsCounter.fps, FpsCounter.frame_counter = FpsCounter.frame_counter, 0
@@ -108,10 +108,10 @@ class FpsCounter (Entity):
 		return FpsCounter.fps
 
 	def getSubRect(self):
-		return self.text.GetTextureRect()
+		return self.text.getTextureRect()
 
 	def getLocalBounds(self):
-		return self.text.GetLocalBounds()
+		return self.text.getLocalBounds()
 
 	def getGlobalBounds(self):
-		return self.text.GetGlobalBounds()
+		return self.text.getGlobalBounds()

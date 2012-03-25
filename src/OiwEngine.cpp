@@ -7,9 +7,9 @@ OiwEngine::OiwEngine(const Vector2i &windowSize, const std::string &windowTitle)
     App(VideoMode(windowSize.x, windowSize.y, 32), windowTitle),
     m_currentState(0)
 {
-    App.SetFramerateLimit(60);
-    App.EnableVerticalSync(true);
-    textureMgr.SetLoadingFailureStrategy(thor::Resources::ThrowException);
+    App.setFramerateLimit(60);
+    App.setVerticalSyncEnabled(true);
+    textureMgr.setLoadingFailureStrategy(thor::Resources::ThrowException);
 }
 
 OiwEngine::~OiwEngine()
@@ -20,36 +20,36 @@ OiwEngine::~OiwEngine()
 bool OiwEngine::run()
 {
     sf::Clock frameClock;
-    while (App.IsOpen())
+    while (App.isOpen())
     {
         // Updating state
         if (m_currentState != 0)
-            m_currentState->update(frameClock.Restart());
+            m_currentState->update(frameClock.restart());
 
         // Transmitting events to the state
-        Event Event;
-        while (App.PollEvent(Event))
+        Event event;
+        while (App.pollEvent(event))
         {
-            if (Event.Type == Event::Closed)
+            if (event.type == Event::Closed)
                 quit();
             else if (m_currentState != 0)
-                m_currentState->handleEvent(Event);
+                m_currentState->handleEvent(event);
         }
 
         // Rendering it
-        App.Clear();
+        App.clear();
 
         if (m_currentState != 0)
             m_currentState->render(App);
 
-        App.Display();
+        App.display();
     }
     return true;
 }
 
 void OiwEngine::quit()
 {
-    App.Close();
+    App.close();
     m_currentState = 0;
 }
 

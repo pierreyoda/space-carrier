@@ -27,9 +27,9 @@ class ModuleSlot (Entity):
 	def __init__(self, id, engine, rect, type, mark, origin_at_center=True):
 		Entity.__init__(self, id)
 		self.type, self.mark = type, mark
-		self.size = Vector2f(rect.Width, rect.Height)
-		self.pos = (rect.Left + self.size.x, rect.Top + self.size.y) # don't know why but needed...
-		#self.pos = (rect.Left, rect.Top)
+		self.size = Vector2f(rect.width, rect.height)
+		self.pos = (rect.left + self.size.x, rect.top + self.size.y) # don't know why but needed...
+		#self.pos = (rect.left, rect.top)
 		if origin_at_center:
 			originAtCenter(self)
 		self.mounted_module = ModuleEmpty(engine, self.id+"-MODULE_EMPTY")
@@ -67,9 +67,9 @@ class ModuleSlot (Entity):
 			return True
 		return False
 
-	def Draw(self, target, states):
-		states.Transform *= self.GetTransform()
-		target.Draw(self.mounted_module, states)
+	def draw(self, target, states):
+		states.transform *= self.getTransform()
+		target.draw(self.mounted_module, states)
 
 	def update(self, elapsed_time):
 		self.mounted_module.update(elapsed_time)

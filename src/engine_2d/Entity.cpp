@@ -5,8 +5,8 @@
 Entity::Entity(const std::string &id, const sf::Vector2f &pos,
     const float &angle) : sf::Transformable(), sf::Drawable(), m_id(id)
 {
-    SetPosition(pos);
-    SetRotation(angle);
+    setPosition(pos);
+    setRotation(angle);
 }
 
 Entity::~Entity()
@@ -31,14 +31,14 @@ const std::string &Entity::id() const
 
 sf::FloatRect Entity::getGlobalBounds() const
 {
-    return GetTransform().TransformRect(getLocalBounds());
+    return getTransform().transformRect(getLocalBounds());
 }
 
 bool Entity::isPixelPresent(const sf::Vector2f &pos) const
 {
     sf::FloatRect bounds(getLocalBounds());
-    int x = static_cast<int>(bounds.Left) + static_cast<int>(pos.x),
-        y = static_cast<int>(bounds.Top) + static_cast<int>(pos.y);
+    int x = static_cast<int>(bounds.left) + static_cast<int>(pos.x),
+        y = static_cast<int>(bounds.top) + static_cast<int>(pos.y);
     if (x < 0 || y < 0 || y >= static_cast<int>(m_collisionTable.pixelsPresent.size())
         || x >= static_cast<int>(m_collisionTable.pixelsPresent[y].size()))
             return false;

@@ -11,7 +11,7 @@ SpaceCarrier::SpaceCarrier() : engine(sf::Vector2i(800, 600), "Space Carrier - v
 
 SpaceCarrier::~SpaceCarrier()
 {
-    pythonEmbedder.Release();
+    pythonEmbedder.reset();
 }
 
 void SpaceCarrier::launch()
@@ -21,7 +21,7 @@ void SpaceCarrier::launch()
     bool sucess = false;
     try
     {
-        pythonEmbedder.Reset(new PythonEmbedder());
+        pythonEmbedder.reset(new PythonEmbedder());
         if (pythonEmbedder->init())
         {
             fs::path file_path = fs::current_path() / "game.py";

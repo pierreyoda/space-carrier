@@ -29,7 +29,7 @@ class SpaceShip (Entity):
 			subclass.textures["main"] = loadTexture(subclass.textures_paths["main"], engine)
 		self.sprite_hull = sf.Sprite(subclass.textures["main"])
 		originAtCenter(self)
-		#self.collision_table = CollisionTable(self.sprite.GetTexture().CopyToImage())
+		#self.collision_table = CollisionTable(self.sprite.getTexture().copyToImage())
 
 		# Modules slots and modules
 		self.modules_slots = { }
@@ -40,11 +40,11 @@ class SpaceShip (Entity):
 		"""Generate an equipment ID (module or module slot)"""
 		return "{}-{}".format(self.id, name)
 
-	def Draw(self, target, states):
-		states.Transform *= self.GetTransform()
-		target.Draw(self.sprite_hull, states)
+	def draw(self, target, states):
+		states.transform *= self.getTransform()
+		target.draw(self.sprite_hull, states)
 		for slot in self.modules_slots.values():
-			target.Draw(slot, states)
+			target.draw(slot, states)
 
 	def update(self, elapsed_time):
 		for slot in self.modules_slots.values():
@@ -52,4 +52,4 @@ class SpaceShip (Entity):
 		return True
 
 	def getLocalBounds(self): #TODO : take in acoount modules
-		return self.sprite_hull.GetLocalBounds()
+		return self.sprite_hull.getLocalBounds()

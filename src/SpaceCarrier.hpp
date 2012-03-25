@@ -2,7 +2,7 @@
 #define SPACECARRIER_HPP
 
 #include "OiwEngine.hpp"
-#include <Thor/SmartPtr/ScopedPtr.hpp>
+#include <boost/smart_ptr/scoped_ptr.hpp>
 
 class PythonEmbedder;
 
@@ -22,7 +22,7 @@ class SpaceCarrier
 
     private:
         OiwEngine engine;
-        thor::ScopedPtr<PythonEmbedder> pythonEmbedder;
+        boost::scoped_ptr<PythonEmbedder> pythonEmbedder;
 };
 
 #endif /* SPACECARRIER_HPP */

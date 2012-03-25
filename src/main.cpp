@@ -43,6 +43,7 @@ namespace fs = boost::filesystem3;
 
 BOOST_PYTHON_MODULE(sf)
 {
+    PythonEmbedder::exportSfWindow();
     PythonEmbedder::exportSf();
 }
 BOOST_PYTHON_MODULE(thor)

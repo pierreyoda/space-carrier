@@ -18,7 +18,7 @@ void EntityManager::drawAll(sf::RenderTarget &target)
 {
     for (list<Entity*>::iterator it = m_entities.begin();
         it != m_entities.end(); it++)
-        target.Draw(*(*it)); // no NULL-check : addEntity is secured, and updateAll already handles that case
+        target.draw(*(*it)); // no NULL-check : addEntity is secured, and updateAll already handles that case
 }
 
 void EntityManager::updateAll(const sf::Time &elapsedTime)
@@ -26,6 +26,7 @@ void EntityManager::updateAll(const sf::Time &elapsedTime)
     for (list<Entity*>::iterator it = m_entities.begin();
         it != m_entities.end(); it++)
         if ((*it) == 0 || !(*it)->update(elapsedTime)) // must be erased
+            // TODO (Pierre-Yves#2#): delete is not necessarily handled by Python (ex: must be deleted in C++)
             m_entities.erase(it++);
 }
 

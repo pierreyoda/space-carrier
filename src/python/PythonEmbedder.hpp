@@ -2,7 +2,18 @@
 #define PYTHONEMBEDDER_HPP
 
 #include <boost/python.hpp>
+#include <boost/python/suite/indexing/vector_indexing_suite.hpp>
 #include <boost/filesystem.hpp>
+
+// A macro to simplify overloaded member function (=method) binding
+#define method(CLASS, METHOD, RTYPE, ARGS...) \
+    def(BOOST_PP_STRINGIZE(METHOD), \
+        (RTYPE(CLASS::*)(ARGS))&CLASS::METHOD)
+// same but with arguments - const version
+#define method_const(CLASS, METHOD, RTYPE, ARGS...) \
+    def(BOOST_PP_STRINGIZE(METHOD), \
+        (RTYPE(CLASS::*)(ARGS)const)&CLASS::METHOD)
+
 
 /** \brief A class that handles the Python interpretor and provides functions to deal with.
 *
@@ -82,7 +93,13 @@ class PythonEmbedder
         */
         static void exportSf();
 
+        /** \brief Export SFML Window classes into Python.
+        *Otherwise provoked a "too large file" error.
+        */
+        static void exportSfWindow();
+
     private:
+
         boost::python::object main_module, global;
 };
 

@@ -47,19 +47,19 @@ class Frigate (SpaceShip):
 	def update(self, elapsed_time):
 		if not SpaceShip.update(self, elapsed_time):
 			return False
-		elapsed_seconds = elapsed_time.AsSeconds()
-		if globals.action_map.IsActive("player_rotate_left"):
+		elapsed_seconds = elapsed_time.asSeconds()
+		if globals.action_map.isActive("player_rotate_left"):
 			self.angle -= elapsed_seconds * 250
-		elif globals.action_map.IsActive("player_rotate_right"):
+		elif globals.action_map.isActive("player_rotate_right"):
 			self.angle += elapsed_seconds * 250
 
 		# turrets angle refresh (point on mouse)
 		self.turrets_angle_refresh_time += elapsed_seconds
 		if self.turrets_angle_refresh_time >= globals.player_refresh_turrets_target_angle:
 			self.turrets_angle_refresh_time = 0
-			mouse_pos = Mouse.GetPosition(self.engine.getRenderWindow())
+			mouse_pos = Mouse.getPosition(self.engine.getRenderWindow())
 			if globals.in_screen(mouse_pos):
-				self.point_weapons_on(self.engine.getRenderWindow().ConvertCoords(
+				self.point_weapons_on(self.engine.getRenderWindow().convertCoords(
 					mouse_pos.x, mouse_pos.y))
 
 		return True
@@ -67,6 +67,6 @@ class Frigate (SpaceShip):
 	def point_weapons_on(self, pos):
 		for weapon_slot_name in self.weapon_slots_list:
 			weapon_slot = self.modules_slots[weapon_slot_name]
-			direction = pos - self.GetTransform().TransformPoint(
+			direction = pos - self.getTransform().transformPoint(
 				weapon_slot.turret_center)
-			weapon_slot.align_on(direction)
+			weapon_slot.align_on(direction, self.angle)
