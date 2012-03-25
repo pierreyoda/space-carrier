@@ -144,9 +144,9 @@ struct EntityWrap : Entity, wrapper<Entity>
         const float &angle = 0.f) : Entity(id, pos, angle)
     { }
 
-    void Draw(sf::RenderTarget &target, sf::RenderStates states) const
+    void draw(sf::RenderTarget &target, sf::RenderStates states) const
     {
-        this->get_override("Draw")(boost::ref(target), states);
+        this->get_override("draw")(boost::ref(target), states);
     }
 
     bool update(const sf::Time &elapsedTime)
@@ -161,17 +161,17 @@ struct EntityWrap : Entity, wrapper<Entity>
 
     float angle() const
     {
-        return Entity::GetRotation();
+        return Entity::getRotation();
     }
 
     void setAngle(const float &angle)
     {
-        Entity::SetRotation(angle);
+        Entity::setRotation(angle);
     }
 
     const sf::Vector2f &pos() const
     {
-        return Entity::GetPosition();
+        return Entity::getPosition();
     }
 
     /** \brief Position setter. Accepts : sf::Vector2f ; (x,y) tuple where both x and y can be none.
@@ -186,17 +186,17 @@ struct EntityWrap : Entity, wrapper<Entity>
             if (!x_obj.is_none())
                 x = extract<float>(x_obj);
             if (len(value) == 1) // only x param
-                Entity::SetPosition(x, 0);
+                Entity::setPosition(x, 0);
             else
             {
                 object y_obj(value[1]);
                 if (!y_obj.is_none())
                     y = extract<float>(y_obj);
-                Entity::SetPosition(x, y);
+                Entity::setPosition(x, y);
             }
         }
         else if (extract<sf::Vector2f>(value).check())
-            Entity::SetPosition(extract<sf::Vector2f>(value));
+            Entity::setPosition(extract<sf::Vector2f>(value));
         else // incorrect type
         {
             std::string message = std::string("setting ") + m_id.c_str() +
@@ -208,7 +208,7 @@ struct EntityWrap : Entity, wrapper<Entity>
 
 thor::ResourcePtr<sf::Texture> engine_loadtexture(OiwEngine &engine, const thor::Resources::TextureKey &key)
 {
-    thor::ResourcePtr<sf::Texture> img = engine.getTextureMgr().Acquire(key);
+    thor::ResourcePtr<sf::Texture> img = engine.getTextureMgr().acquire(key);
     /*if (!img) // load failed
     {
         PyErr_SetString(PyExc_ValueError, "Failed to load texture.");
@@ -219,7 +219,7 @@ thor::ResourcePtr<sf::Texture> engine_loadtexture(OiwEngine &engine, const thor:
 
 thor::ResourcePtr<sf::Font> engine_loadfont(OiwEngine &engine, const thor::Resources::FontKey &key)
 {
-    thor::ResourcePtr<sf::Font> img = engine.getFontMgr().Acquire(key);
+    thor::ResourcePtr<sf::Font> img = engine.getFontMgr().acquire(key);
    /* if (!img) // load failed
         PyErr_SetString(PyExc_ValueError, "Failed to load font.");
         throw_error_already_set();
@@ -250,7 +250,7 @@ void PythonEmbedder::exportOiwEngine()
         "An abstract class representing a game entity",
         bp::init<const std::string&, optional<const sf::Vector2f&,
             const float& > >())
-        .def("Draw", pure_virtual(&Entity::Draw))
+        .def("draw", pure_virtual(&Entity::draw))
         .def("update", pure_virtual(&Entity::update))
         .def("getLocalBounds", pure_virtual(&Entity::getLocalBounds))
         .def("getGlobalBounds", &Entity::getGlobalBounds)
@@ -267,6 +267,7 @@ void PythonEmbedder::exportOiwEngine()
         "Tool class to handle all game entities and their interactions")
         .def("addEntity", &EntityManager::addEntity,
             with_custodian_and_ward<1, 2>()) // keep entity as long as manager is alive
+        .def("removeEntity", &EntityManager::removeEntity)
         .def("drawAll", &EntityManager::drawAll)
         .def("updateAll", &EntityManager::updateAll)
     ; class_<std::vector<bool> >("bool_vec")

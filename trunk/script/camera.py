@@ -11,8 +11,8 @@ class Camera (sf.View):
 
 	def focus_on_entity(self, entity):
 		"""Camera will center on the specified entity"""
-		self.SetCenter(entity.pos)
+		self.setCenter(entity.pos)
 
 	def reset(self):
-		self.Reset(sf.FloatRect(0, 0, globals.screen_size[0],
+		self.reset(sf.FloatRect(0, 0, globals.screen_size[0],
 			globals.screen_size[1]))

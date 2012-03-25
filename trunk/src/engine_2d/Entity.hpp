@@ -43,7 +43,7 @@ class Entity : public sf::Transformable, public sf::Drawable
         * \param target Target where the entity will be rendered.
         *
         */
-        virtual void Draw(sf::RenderTarget&, sf::RenderStates) const = 0;
+        virtual void draw(sf::RenderTarget&, sf::RenderStates) const = 0;
 
         /** \brief Update the entity.
         *

@@ -16,12 +16,13 @@
 				</Compiler>
 				<Linker>
 					<Add option="-lthor-d" />
+					<Add option="-lsfml-audio-d" />
 					<Add option="-lsfml-graphics-d" />
 					<Add option="-lsfml-window-d" />
 					<Add option="-lsfml-system-d" />
-					<Add option="-lboost_python3-mgw45-mt-d-1_47" />
-					<Add option="-lboost_filesystem-mgw45-mt-d-1_47" />
-					<Add option="-lboost_system-mgw45-mt-d-1_47" />
+					<Add option="-lboost_python3-mgw46-mt-d-1_47" />
+					<Add option="-lboost_filesystem-mgw46-mt-d-1_47" />
+					<Add option="-lboost_system-mgw46-mt-d-1_47" />
 				</Linker>
 			</Target>
 			<Target title="Release">
@@ -35,12 +36,13 @@
 				<Linker>
 					<Add option="-s" />
 					<Add option="-lthor" />
+					<Add option="-lsfml-audio" />
 					<Add option="-lsfml-graphics" />
 					<Add option="-lsfml-window" />
 					<Add option="-lsfml-system" />
-					<Add option="-lboost_python3-mgw45-mt-1_47" />
-					<Add option="-lboost_filesystem-mgw45-mt-1_47" />
-					<Add option="-lboost_system-mgw45-mt-1_47" />
+					<Add option="-lboost_python3-mgw46-mt-1_47" />
+					<Add option="-lboost_filesystem-mgw46-mt-1_47" />
+					<Add option="-lboost_system-mgw46-mt-1_47" />
 				</Linker>
 			</Target>
 		</Build>
@@ -79,12 +81,22 @@
 		<Unit filename="src\python\PythonEmbedder.cpp" />
 		<Unit filename="src\python\PythonEmbedder.hpp" />
 		<Unit filename="src\python\pythonSfml.cpp" />
+		<Unit filename="src\python\pythonSfmlWindow.cpp" />
 		<Unit filename="src\python\pythonThor.cpp" />
 		<Extensions>
 			<code_completion />
 			<envvars />
 			<debugger />
 			<lib_finder disable_auto="1" />
+			<DoxyBlocks>
+				<comment_style block="0" line="0" />
+				<doxyfile_project />
+				<doxyfile_build />
+				<doxyfile_warnings />
+				<doxyfile_output />
+				<doxyfile_dot />
+				<general />
+			</DoxyBlocks>
 		</Extensions>
 	</Project>
 </CodeBlocks_project_file>

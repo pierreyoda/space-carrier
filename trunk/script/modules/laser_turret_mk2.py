@@ -12,7 +12,7 @@ class ModuleLaserTurretMK2 (ModuleBaseWeapon):
 
 	def __init__(self, engine, id):
 		ModuleBaseWeapon.__init__(self, engine, id)
-		self.SetOrigin(15, 47)
+		self.setOrigin(15, 47)
 		self.properties["mark"] = 2
 		self.properties["hp"]	= 2500
 		self.properties["cost"] = 150000

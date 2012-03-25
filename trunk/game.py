@@ -29,7 +29,7 @@ def take_screenshot(render_window, folder = "screens/"):
 	print("Screenshot saved as {}".format(filename))
 	if not os.path.isdir(folder):
 		os.mkdir(folder) # create /screens not existing yet
-	render_window.Capture().SaveToFile(folder + filename)
+	render_window.capture().saveToFile(folder + filename)
 
 
 class TestState (State):
@@ -62,61 +62,61 @@ class TestState (State):
 		# Entities
 		self.entities_mgr.addEntity(Frigate(self.engine, "frigate"))
 		self.entities_mgr.addEntity(FpsCounter(self.engine))
-		self.engine.getRenderWindow().SetFramerateLimit(0)
-		self.engine.getRenderWindow().EnableVerticalSync(False)
+		self.engine.getRenderWindow().setFramerateLimit(0)
+		self.engine.getRenderWindow().setVerticalSyncEnabled(False)
 
 		return True
 
 	def update(self, elapsed_time):
 		# Game main events
-		if globals.action_map.IsActive("quit"):
+		if globals.action_map.isActive("quit"):
 			self.engine.quit()
 			return
-		elif globals.action_map.IsActive("debug"):
+		elif globals.action_map.isActive("debug"):
 			globals.debug = not globals.debug
 			print("debug={}".format(globals.debug))
-		elif globals.action_map.IsActive("print_mouse_pos"):
+		elif globals.action_map.isActive("print_mouse_pos"):
 			print("Mouse relative position is : {}".format(
-				sf.Mouse.GetPosition(self.engine.getRenderWindow())))
-		elif globals.action_map.IsActive("screenshot"):
+				sf.Mouse.getPosition(self.engine.getRenderWindow())))
+		elif globals.action_map.isActive("screenshot"):
 			take_screenshot(self.engine.getRenderWindow())
 
 		# GAME CAMERA : KEYBOARD
-		if globals.action_map.IsActive("keyboard_zoom_in"):
-			globals.camera.Zoom(1.0 - elapsed_time.AsSeconds())
-		elif globals.action_map.IsActive("keyboard_zoom_out"):
-			globals.camera.Zoom(1.0 + elapsed_time.AsSeconds())
-		elif globals.action_map.IsActive("keyboard_zoom_reset"):
+		if globals.action_map.isActive("keyboard_zoom_in"):
+			globals.camera.zoom(1.0 - elapsed_time.asSeconds())
+		elif globals.action_map.isActive("keyboard_zoom_out"):
+			globals.camera.zoom(1.0 + elapsed_time.asSeconds())
+		elif globals.action_map.isActive("keyboard_zoom_reset"):
 			globals.camera.reset()
 
 		# Game entities
 		self.entities_mgr.updateAll(elapsed_time)
 
-		globals.action_map.ClearEvents()
+		globals.action_map.clearEvents()
 
 	def render(self, target):
-		target.SetView(globals.camera)
+		target.setView(globals.camera)
 
-		target.Clear(sf.Color(50, 200, 100))
+		target.clear(sf.Color(100, 200, 100))
 		self.entities_mgr.drawAll(target)
 
-		target.SetView(target.GetDefaultView())
+		target.setView(target.getDefaultView())
 
 	def handleEvent(self, event):
 		# GAME CAMERA : MOUSE
 		# Mouse wheel => camera zoom
-		if event.Type == sf.Event.MouseWheelMoved:
-			if event.MouseWheel.Delta < 0: # zoom
-				globals.camera.Zoom(1.1)
+		if event.type == sf.Event.MouseWheelMoved:
+			if event.mouseWheel.delta < 0: # zoom
+				globals.camera.zoom(1.1)
 			else: # unzoom
-				globals.camera.Zoom(0.9)
+				globals.camera.zoom(0.9)
 		# middle mouse button => camera reset
-		elif event.Type == sf.Event.MouseButtonPressed and \
-			event.MouseButton.Button == sf.Mouse.Middle:
+		elif event.type == sf.Event.MouseButtonPressed and \
+			event.mouseButton.button == sf.Mouse.Middle:
 			globals.camera.reset()
 		# Other events
 		else:
-			globals.action_map.PushEvent(event)
+			globals.action_map.pushEvent(event)
 
 
 def SpaceCarrier_initScript(engine):
@@ -125,20 +125,14 @@ def SpaceCarrier_initScript(engine):
 	"""
 	print("Initializing game script...")
 	game_mode = TestState(engine)
-	try:
-		if not game_mode.init():
-			raise RuntimeError("") # unknown error
-	except RuntimeError as error:
-		message = str(error)
-		print("Cannot initialize Test State", end = "")
-		if message and not message.isspace():
-			print(" :", message, end = "")
-		print(".")
-		return False
+	# Exception handling from C++ works better in most of the cases
+	if not game_mode.init():
+		print("Cannot initialize Test State")
+		exit(1)
 	print("Test State was succesfully initialized!")
-	engine.getRenderWindow().SetSize(globals.screen_size[0],
-		globals.screen_size[1])
-	engine.getRenderWindow().EnableKeyRepeat(False)
+	engine.getRenderWindow().setSize(sf.Vector2u(globals.screen_size[0],
+		globals.screen_size[1]))
+	engine.getRenderWindow().setKeyRepeatEnabled(False)
 	engine.addState(game_mode, "Test", True)
 
 	return True

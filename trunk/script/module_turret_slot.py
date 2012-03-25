@@ -20,8 +20,8 @@ class ModuleTurretSlot (ModuleSlot):
 		self.angles = angles
 		self.target_angle = 0
 		self.rotated_angle = 0
-		self.turret_center = Vector2f(rect.Left+rect.Width/2,
-			rect.Top+rect.Height/2)
+		self.turret_center = Vector2f(rect.left+rect.width/2,
+			rect.top+rect.height/2)
 
 	# TODO : better left/right rotation decision
 	def update(self, elapsed_time):
@@ -34,15 +34,15 @@ class ModuleTurretSlot (ModuleSlot):
 			return True
 		# Rotate left
 		if diff < 180:
-			delta = -self.rotation_speed * elapsed_time.AsSeconds()
+			delta = -self.rotation_speed * elapsed_time.asSeconds()
 			if self.rotated_angle+delta > self.angles[0]:	# limit check
-				self.mounted_module.Rotate(delta)
+				self.mounted_module.rotate(delta)
 				self.rotated_angle += delta
 		# Rotate right
 		else:
-			delta = self.rotation_speed * elapsed_time.AsSeconds()
+			delta = self.rotation_speed * elapsed_time.asSeconds()
 			if self.rotated_angle+delta < self.angles[1]:	# limit check
-				self.mounted_module.Rotate(delta)
+				self.mounted_module.rotate(delta)
 				self.rotated_angle += delta
 		return True
 
@@ -54,10 +54,10 @@ class ModuleTurretSlot (ModuleSlot):
 		self.target_angle = module.angle
 		self.rotation_speed = module.properties["rotation_speed"]
 
-	def align_on(self, direction):
+	def align_on(self, direction, spaceship_angle):
 		"""Point mounted turret module on the given position,
 			if allowed by angle constraints."""
 		# +90 cause angle is with the spaceship
 		if abs(direction.x) < 15.0 and abs(direction.y) < 15.0:
 			return # very near directions : ignore, otherwise provokes weird angles
-		self.target_angle = (degrees(atan2(direction.y, direction.x))+90)
+		self.target_angle = (degrees(atan2(direction.y, direction.x))+90) - spaceship_angle
