@@ -23,7 +23,6 @@ class ModuleTurretSlot (ModuleSlot):
 		self.turret_center = Vector2f(rect.left+rect.width/2,
 			rect.top+rect.height/2)
 
-	# TODO : better left/right rotation decision
 	def update(self, elapsed_time):
 		if not ModuleSlot.update(self, elapsed_time):
 			return False
@@ -33,7 +32,7 @@ class ModuleTurretSlot (ModuleSlot):
 		if diff < 1:   # useless
 			return True
 		# Rotate left
-		if diff < 180:
+		if self.target_angle % 360 > 180:
 			delta = -self.rotation_speed * elapsed_time.asSeconds()
 			if self.rotated_angle+delta > self.angles[0]:	# limit check
 				self.mounted_module.rotate(delta)
