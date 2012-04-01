@@ -1,13 +1,14 @@
 #include <iostream>
 #include "PythonEmbedder.hpp"
+#include <boost/python/call.hpp>
 
 using namespace boost::python;
 
 #include <thor/Time.hpp>
+#include <thor/Math/Distributions.hpp>
 #include <thor/Multimedia.hpp>
 #include <thor/Events.hpp>
 #include <thor/Resources.hpp>
-#include <thor/Geometry.hpp>
 #include <thor/Particles.hpp>
 #include <thor/Vectors.hpp>
 #include <Aurora/SmartPtr/CopiedPtr.hpp>
@@ -93,8 +94,7 @@ struct ResourcePtr_wrapper
             .def("valid", &valid)
             .def("get", &get,  return_internal_reference<1, with_custodian_and_ward_postcall<0, 1> >())
         ;
-        /*def("NoDeletePtr", &thor::NoDeletePtr<const Resource>,
-            with_custodian_and_ward_postcall<1, 0>()); // keep ResourcePtr as long as original pointer is alive*/
+        def("noDeletePtr", &thor::noDeletePtr<const Resource>);
     }
 
     static Resource *get(const ResourcePtrT &resourcePtr)
@@ -152,24 +152,122 @@ namespace boost
     }
 } // namespace boost::python
 
-
-
-// "Thin wrappers"
-/*void Emitter_setEmissionZone(thor::Emitter &emitter, thor::Zone &zone)
-{
-    emitter.setEmissionZone(aur::CopiedPtr<thor::Zone>(zone));
-}
-void TargetEmitter_setTargetZone(thor::TargetEmitter &emitter, thor::Zone &zone)
-{
-    emitter.setTargetZone(zone);
-}*/
-
 sf::Vector2f PolarVector2f_to_Vector2f(const thor::PolarVector2f &vector)
 {
     return static_cast<sf::Vector2f>(vector);
 }
 
-// TODO (Pierre-Yves#1#): [EXPORT-THOR] Find a way to bind CreateGradient (from a list of colors and transitions...)
+template <typename T>
+struct PythonCallback
+{
+    PythonCallback(PyObject *callable_) : callable(handle<>(borrowed(callable_)))
+    {
+
+    }
+
+    T operator() ()
+    {
+        return call<T>(callable.ptr());
+    }
+
+    object callable;
+};
+
+void UniversalEmitter_setLifetime(thor::UniversalEmitter &emitter, sf::Time particleLifetime)
+{
+    emitter.setLifetime(particleLifetime);
+}
+void UniversalEmitter_setLifetimeCallback(thor::UniversalEmitter &emitter, PyObject *callable)
+{
+    emitter.setLifetime(PythonCallback<sf::Time>(callable));
+}
+
+void UniversalEmitter_setPosition(thor::UniversalEmitter &emitter, sf::Vector2f particlePosition)
+{
+    emitter.setPosition(particlePosition);
+}
+void UniversalEmitter_setPositionCallback(thor::UniversalEmitter &emitter, PyObject *callable)
+{
+    emitter.setPosition(PythonCallback<sf::Vector2f>(callable));
+}
+
+void UniversalEmitter_setVelocity(thor::UniversalEmitter &emitter, sf::Vector2f particleVelocity)
+{
+    emitter.setVelocity(particleVelocity);
+}
+void UniversalEmitter_setVelocityCallback(thor::UniversalEmitter &emitter, PyObject *callable)
+{
+    emitter.setVelocity(PythonCallback<sf::Vector2f>(callable));
+}
+
+void UniversalEmitter_setRotation(thor::UniversalEmitter &emitter, float particleRotation)
+{
+    emitter.setRotation(particleRotation);
+}
+void UniversalEmitter_setRotationCallback(thor::UniversalEmitter &emitter, PyObject *callable)
+{
+    emitter.setRotation(PythonCallback<float>(callable));
+}
+
+void UniversalEmitter_setRotationSpeed(thor::UniversalEmitter &emitter, float particleRotationSpeed)
+{
+    emitter.setRotationSpeed(particleRotationSpeed);
+}
+void UniversalEmitter_setRotationSpeedCallback(thor::UniversalEmitter &emitter, PyObject *callable)
+{
+    emitter.setRotationSpeed(PythonCallback<float>(callable));
+}
+
+void UniversalEmitter_setScale(thor::UniversalEmitter &emitter, sf::Vector2f particleScale)
+{
+    emitter.setScale(particleScale);
+}
+void UniversalEmitter_setScaleCallback(thor::UniversalEmitter &emitter, PyObject *callable)
+{
+    emitter.setScale(PythonCallback<sf::Vector2f>(callable));
+}
+
+void UniversalEmitter_setColor(thor::UniversalEmitter &emitter, sf::Color particeColor)
+{
+    emitter.setColor(particeColor);
+}
+void UniversalEmitter_setColorCallback(thor::UniversalEmitter &emitter, PyObject *callable)
+{
+    emitter.setColor(PythonCallback<sf::Color>(callable));
+}
+
+thor::ColorGradient createGradientFromList(const sf::Color &first, const list &l)
+{
+    thor::detail::ColorGradientConvertible creator(first);
+    for (unsigned int i = 0; i < static_cast<unsigned int>(len(l) / 2 + 1); i += 2)
+    {
+        creator(extract<float>(l[i])) (extract<sf::Color>(l[i+1]));
+    }
+    return thor::ColorGradient(creator);
+}
+
+struct DistributionsNamespace { };
+
+
+/// Wrapper for sf:Distribution<T>
+template <typename T>
+struct DistributionWrapper
+{
+    static void wrap(const std::string &python_name)
+    {
+        class_< aur::Distribution<T> >(python_name.c_str(),
+            "Class holding a rule to create values with predefined properties",
+            no_init)
+            .def("get", &distribution_get)
+        ;
+    }
+
+    static inline T distribution_get(const aur::Distribution<T> &distribution)
+    {
+        return distribution();
+    }
+};
+
 // TODO (Pierre-Yves#2#): [EXPORT-THOR] thor::Action : operators && (and) and || (or) don't work
 // TODO (Pierre-Yves#5#): [EXPORT-THOR] make thor::Emitter and thor::Affector derivable (--> Wrapper)
 void PythonEmbedder::exportThor()
@@ -196,10 +294,6 @@ void PythonEmbedder::exportThor()
         .def("reset", &thor::Timer::reset)
         .def("reset", &thor_timer_reset)
     ;
-    class_<thor::ColorGradient>("ColorGradient",
-        "Class to implement color gradients", bp::init<const sf::Color&>())
-        .def("getColor", &thor::ColorGradient::getColor)
-    ; def("toString", (std::string(*)(const sf::Color&))&thor::toString);
 
     // Events
     class_<ActionStrMap, boost::noncopyable>("ActionStrMap",
@@ -271,47 +365,16 @@ void PythonEmbedder::exportThor()
     ResourcePtr_wrapper<sf::Image>::wrap("ImageResourcePtr");
     ResourcePtr_wrapper<sf::Font>::wrap("FontResourcePtr");
 
-    // Geometry
-    class_<thor::Zone, boost::noncopyable, aur::CopiedPtr<thor::Zone> >("Zone",
-        "Abstract base class for geometric zones", no_init)
-        .method(thor::Zone, setPosition, void, sf::Vector2f)
-        .method(thor::Zone, setPosition, void, float, float)
-        .method(thor::Zone, move, void, sf::Vector2f)
-        .method(thor::Zone, move, void, float, float)
-        .def("getPosition", &thor::Zone::getPosition)
-        .def("setRotation", &thor::Zone::setRotation)
-        .def("rotate", &thor::Zone::rotate)
-        .def("getRotation", &thor::Zone::getRotation)
-    ; class_<thor::Circle, bases<thor::Zone>, aur::CopiedPtr<thor::Circle> >("Circle", "Geometric circle class",
-        bp::init<sf::Vector2f, float>())
-        .def("getRandomPoint", &thor::Circle::getRandomPoint)
-        .def("clone", pure_virtual(&thor::Circle::clone),
-            return_value_policy<manage_new_object>())
-        .def("setRadius", &thor::Circle::setRadius)
-        .def("getRadius", &thor::Circle::getRadius)
-    ; class_<thor::Point, bases<thor::Zone>, aur::CopiedPtr<thor::Point> >("Point", "Geometric point class",
-        bp::init<sf::Vector2f>())
-        .def("getRandomPoint", &thor::Point::getRandomPoint)
-        .def("clone", pure_virtual(&thor::Point::clone),
-            return_value_policy<manage_new_object>())
-        .def(bp::init<float, float>())
-    ; class_<thor::Rectangle, bases<thor::Zone>, aur::CopiedPtr<thor::Rectangle> >("Rectangle",
-        "Geometric rectangle class",
-        bp::init< const sf::FloatRect&, optional<float> >())
-        .def(bp::init< sf::Vector2f, sf::Vector2f, optional<float> >())
-        .def(bp::init< float, float, float, float, optional<float> >())
-        .def("getRandomPoint", &thor::Rectangle::getRandomPoint)
-        .def("clone", pure_virtual(&thor::Rectangle::clone),
-            return_value_policy<manage_new_object>())
-        .def("setSize", &thor::Rectangle::setSize)
-        .def("getSize", &thor::Rectangle::getSize)
-    ;
+    // Multimedia
+    class_<thor::ColorGradient>("ColorGradient",
+        "Class to implement color gradients", bp::init<const sf::Color&>())
+        .def("getColor", &thor::ColorGradient::getColor)
+    ; def("createGradient", &createGradientFromList);
+    def("toString", (std::string(*)(const sf::Color&))&thor::toString);
+
     // Particles
     {
     using namespace thor;
-    implicitly_convertible< aur::CopiedPtr<Circle>, aur::CopiedPtr<Zone> >();
-    implicitly_convertible< aur::CopiedPtr<Point>, aur::CopiedPtr<Zone> >();
-    implicitly_convertible< aur::CopiedPtr<Rectangle>, aur::CopiedPtr<Zone> >();
     class_<ParticleSystem, boost::noncopyable>("ParticleSystem",
         "Class for simple particle systems",
             bp::init<ResourcePtr<const sf::Texture>,
@@ -333,47 +396,29 @@ void PythonEmbedder::exportThor()
         .def("setGlowing", &ParticleSystem::setGlowing)
         .def("isGlowing", &ParticleSystem::isGlowing)
     ; ResourcePtr_wrapper<const sf::Texture>::wrap("TextureResourcePtrConst");
+
     class_<Emitter, boost::noncopyable, std::tr1::shared_ptr<Emitter> >("Emitter",
         "Abstract base class for particle emitters", no_init)
-        .def("setEmissionZone", &Emitter::setEmissionZone,
-             with_custodian_and_ward<1, 2>()) // keep zone as long as emitter is alive
-        .def("getEmissionZone", (Zone&(Emitter::*)())&Emitter::getEmissionZone,
-            return_internal_reference<>())
-        .def("getEmissionZone", (const Zone&(Emitter::*)()const)
-             &Emitter::getEmissionZone, return_internal_reference<>())
-        .def("setEmissionRate", &Emitter::setEmissionRate)
-        .def("getEmissionRate", &Emitter::getEmissionRate)
-        .def("setParticleScale", &Emitter::setParticleScale)
-        .def("getParticleScale", &Emitter::getParticleScale)
-        .def("setParticleColor", &Emitter::setParticleColor)
-        .def("getParticleColor", &Emitter::getParticleColor,
-             return_internal_reference<>())
-        .def("setParticleLifetime", &Emitter::setParticleLifetime)
-        .def("getParticledLifetime", &Emitter::getParticleLifetime)
-    ; class_<DirectionalEmitter, bases<Emitter>, std::tr1::shared_ptr<DirectionalEmitter> >(
-        "DirectionalEmitter", "Class that emits particles in a given direction",
-        bp::init<float, sf::Time>())
-        .def("create", &DirectionalEmitter::create)
-        .staticmethod("create")
-        .def("setParticleVelocity", &DirectionalEmitter::setParticleVelocity)
-        .def("getParticleVelocity", &DirectionalEmitter::getParticleVelocity)
-        .def("setEmissionAngle", &DirectionalEmitter::setEmissionAngle)
-        .def("getEmissionAngle", &DirectionalEmitter::getEmissionAngle)
-    ; class_<TargetEmitter, bases<Emitter>, std::tr1::shared_ptr<TargetEmitter> >(
-        "TargetEmitter", "Emits particles towards a specified target zone",
-        bp::init<float, sf::Time>())
-        .def("create", &TargetEmitter::create)
-        .staticmethod("create")
-        .def("setTargetZone", &TargetEmitter::setTargetZone,
-             with_custodian_and_ward<1, 2>()) // keep zone as long as emitter is alive
-        .def("getTargetZone", (Zone&(TargetEmitter::*)())&TargetEmitter::getTargetZone,
-            return_internal_reference<>())
-        .def("getTargetZone", (const Zone&(TargetEmitter::*)()const)
-             &TargetEmitter::getTargetZone, return_internal_reference<>())
-        .def("setParticleSpeed", &TargetEmitter::setParticleSpeed)
-        .def("getParticleSpeed", &TargetEmitter::getParticleSpeed)
-    ; implicitly_convertible< std::tr1::shared_ptr<DirectionalEmitter>, std::tr1::shared_ptr<Emitter> >();
-    implicitly_convertible< std::tr1::shared_ptr<TargetEmitter>, std::tr1::shared_ptr<Emitter> >();
+    ; class_<UniversalEmitter, bases<Emitter>,
+        UniversalEmitter::Ptr>("UniversalEmitter",
+        "Class that emits particles with customizable initial conditions")
+        .def("create", &UniversalEmitter::create)
+        .def("setEmissionRate", &UniversalEmitter::setEmissionRate)
+        .def("setLifetime", &UniversalEmitter_setLifetime)
+        .def("setPosition", &UniversalEmitter_setPosition)
+        .def("setVelocity", &UniversalEmitter_setVelocity)
+        .def("setRotation", &UniversalEmitter_setRotation)
+        .def("setRotationSpeed", &UniversalEmitter_setRotationSpeed)
+        .def("setScale", &UniversalEmitter_setScale)
+        .def("setColor", &UniversalEmitter_setColor)
+        .def("setLifetimeCallback", &UniversalEmitter_setLifetimeCallback)
+        .def("setPositionCallback", &UniversalEmitter_setPositionCallback)
+        .def("setVelocityCallback", &UniversalEmitter_setVelocityCallback)
+        .def("setRotationCallback", &UniversalEmitter_setRotationCallback)
+        .def("setRotationSpeedCallback", &UniversalEmitter_setRotationSpeedCallback)
+        .def("setScaleCallback", &UniversalEmitter_setScaleCallback)
+        .def("setColorCallback", &UniversalEmitter_setColorCallback)
+    ; implicitly_convertible< std::tr1::shared_ptr<UniversalEmitter>, std::tr1::shared_ptr<Emitter> >();
 
     class_<Affector, boost::noncopyable, std::tr1::shared_ptr<Affector> >(
         "Affector", "Abstract base class for particle affectors", no_init)
@@ -434,4 +479,18 @@ void PythonEmbedder::exportThor()
         .def("to_vec2f", &PolarVector2f_to_Vector2f)
     ; def("lenght", (float(*)(const thor::PolarVector2f&))&thor::length);
     def("polarAngle", (float(*)(const thor::PolarVector2f&))&thor::polarAngle);
+
+    // Math
+    { // thor::Distributions
+        scope nested = class_<DistributionsNamespace>("Distributions",
+            "thor::Distributions namespace", no_init);
+        def("uniform", &thor::Distributions::uniform);
+        def("rect", &thor::Distributions::rect);
+        def("circle", &thor::Distributions::circle);
+        def("deflect", &thor::Distributions::deflect);
+    } // end of thor::Distributions scope
+
+    // AURORA
+    DistributionWrapper<float>::wrap("DistributionFloat");
+    DistributionWrapper<sf::Vector2f>::wrap("DistributionVector2f");
 }

@@ -16,6 +16,14 @@ def loadTexture(path, engine):
 		raise RuntimeError("cannot load texture '" + path + "'")
 	return texture.get()
 
+def loadFont(path, engine):
+	"""Load a font by path, raise an exception if failed"""
+	font_key = thor.Resources.FontKey.fromFile(path)
+	font	 = engine.loadFont(font_key)
+	if not font.valid():
+		raise RuntimeError("cannot load font '" + path + "'")
+	return font.get()
+
 def entitySize(entity):
 	"""Compute an entity's size, taking in account its scale"""
 	bounds, scale = entity.getLocalBounds(), entity.getScale()
@@ -68,11 +76,7 @@ class FpsCounter (Entity):
 
 	def __init__(self, engine):
 		Entity.__init__(self, "FpsCounter")
-		font_key = thor.Resources.FontKey.fromFile(self.font_path)
-		font = engine.loadFont(font_key)
-		if not font.valid():
-			raise RuntimeError("cannot load font '" + self.font_path + "'")
-		self.font = font.get()
+		self.font = loadFont(self.font_path, engine)
 		self.text = sf.Text("FPS :  0", self.font)
 		self.text.setStyle(sf.Text.Bold)
 		self.clock = thor.StopWatch(True)

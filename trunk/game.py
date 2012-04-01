@@ -31,6 +31,83 @@ def take_screenshot(render_window, folder = "screens/"):
 		os.mkdir(folder) # create /screens not existing yet
 	render_window.capture().saveToFile(folder + filename)
 
+class ParticleTestState (State):
+	"""Particle test state"""
+
+	def __init__(self, engine):
+		State.__init__(self, engine)
+		self.engine = engine
+
+	def init(self):
+		self.paused = False
+		self.engine.getRenderWindow().setFramerateLimit(0)
+		self.engine.getRenderWindow().setVerticalSyncEnabled(False)
+
+		# particle emitter
+		self.emitter = thor.UniversalEmitter.create()
+		self.emitter.setEmissionRate(30)
+		self.emitter.setLifetime(sf.seconds(5))
+		self.emitter.setPositionCallback(self.mousePosition)
+
+		# particle system
+		particle = loadTexture("data/particle.png", self.engine)
+		self.particle_system = thor.ParticleSystem(thor.noDeletePtr(particle))
+		self.particle_system.addEmitter(self.emitter)
+
+		# particle affectors
+		gradient = thor.createGradient(
+			sf.Color(0, 150, 0), [1,
+			sf.Color(0, 150, 100), 1,
+			sf.Color(0, 0, 150),  ])
+		self.particle_system.addAffector(thor.ColorAffector.create(gradient))
+		self.particle_system.addAffector(thor.FadeInAffector.create(0.1))
+		self.particle_system.addAffector(thor.FadeOutAffector.create(0.1))
+		self.particle_system.addAffector(thor.TorqueAffector.create(500))
+		self.particle_system.addAffector(thor.ForceAffector.create(sf.Vector2f(0, 100)))
+
+		# particle parameters
+		self.velocity = thor.PolarVector2f(200, -90)
+		# text
+		from script.entities_tools import loadFont
+		self.font = loadFont("data/Crimson-Roman.otf", self.engine)
+		self.text = sf.Text(
+			"Left click: Enable/disable glow effect\n"
+			"Right click: Pause\n"
+			"Mouse wheel: Change direction\n",
+			self.font)
+		self.text.setCharacterSize(14)
+		self.text.setColor(sf.Color(255, 255, 255))
+
+		return True
+
+	def mousePosition(self):
+		pos = sf.Mouse.getPosition(self.engine.getRenderWindow())
+		return sf.Vector2f(pos.x, pos.y)
+
+	def update(self, elapsed_time):
+		if not self.paused:
+			self.emitter.setVelocity(
+				thor.Distributions.deflect(self.velocity.to_vec2f(), 10).get())
+			self.particle_system.update(elapsed_time)
+
+	def render(self, target):
+		target.clear(sf.Color(30, 30, 30))
+		self.particle_system.draw(target)
+		target.draw(self.text)
+
+	def handleEvent(self, event):
+		if event.type == sf.Event.KeyPressed:
+			if event.key.code == sf.Keyboard.Escape:
+				self.engine.quit()
+			elif event.key.code == sf.Keyboard.F12:
+				take_screenshot(self.engine.getRenderWindow())
+		elif event.type == sf.Event.MouseButtonPressed:
+			if event.mouseButton.button == sf.Mouse.Left:
+				self.particle_system.setGlowing(not self.particle_system.isGlowing())
+			elif event.mouseButton.button == sf.Mouse.Right:
+				self.paused = not self.paused
+		elif event.type == sf.Event.MouseWheelMoved:
+			self.velocity.phi += 12 * event.mouseWheel.delta
 
 class TestState (State):
 	"""Test state"""
@@ -124,11 +201,12 @@ def SpaceCarrier_initScript(engine):
 		Script main entry
 	"""
 	print("Initializing game script...")
-	game_mode = TestState(engine)
+	#game_mode = TestState(engine)
+	game_mode = ParticleTestState(engine)
 	# Exception handling from C++ works better in most of the cases
 	if not game_mode.init():
 		print("Cannot initialize Test State")
-		exit(1)
+		return False
 	print("Test State was succesfully initialized!")
 	engine.getRenderWindow().setSize(sf.Vector2u(globals.screen_size[0],
 		globals.screen_size[1]))
